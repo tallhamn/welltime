@@ -1,20 +1,35 @@
 import { useState } from 'react';
-import type { TimeWindow } from '@/lib/types';
-import { TIME_WINDOWS } from '@/lib/types';
 
 interface AddHabitRowProps {
-  onAdd: (text: string, timeWindow: TimeWindow) => void;
+  onAdd: (text: string, intervalHours: number) => void;
 }
+
+type IntervalUnit = 'hours' | 'days' | 'weeks';
 
 export function AddHabitRow({ onAdd }: AddHabitRowProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [text, setText] = useState('');
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>('morning');
+  const [intervalValue, setIntervalValue] = useState(1);
+  const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>('days');
+
+  const getHoursFromInterval = (value: number, unit: IntervalUnit): number => {
+    switch (unit) {
+      case 'hours':
+        return value;
+      case 'days':
+        return value * 24;
+      case 'weeks':
+        return value * 24 * 7;
+    }
+  };
 
   const handleAdd = () => {
     if (text.trim()) {
-      onAdd(text.trim(), timeWindow);
+      const hours = getHoursFromInterval(intervalValue, intervalUnit);
+      onAdd(text.trim(), hours);
       setText('');
+      setIntervalValue(1);
+      setIntervalUnit('days');
       setIsAdding(false);
     }
   };
@@ -41,10 +56,12 @@ export function AddHabitRow({ onAdd }: AddHabitRowProps) {
             if (e.key === 'Enter') handleAdd();
             if (e.key === 'Escape') {
               setText('');
+              setIntervalValue(1);
+              setIntervalUnit('days');
               setIsAdding(false);
             }
           }}
-          placeholder="New habit..."
+          placeholder="Habit name..."
           className="flex-1 px-3 py-2 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red"
           autoFocus
         />
@@ -55,23 +72,29 @@ export function AddHabitRow({ onAdd }: AddHabitRowProps) {
           Add
         </button>
       </div>
-      <div className="flex gap-1.5 flex-wrap">
-        {Object.entries(TIME_WINDOWS).map(([key, w]) => (
-          <button
-            key={key}
-            onClick={() => setTimeWindow(key as TimeWindow)}
-            className={`px-2 py-1 text-xs rounded transition-colors ${
-              timeWindow === key
-                ? 'bg-kyoto-red text-white'
-                : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
-            }`}
-          >
-            {w.label}
-          </button>
-        ))}
+      <div className="flex gap-2 items-center">
+        <span className="text-xs text-stone-500">every</span>
+        <input
+          type="number"
+          min="1"
+          value={intervalValue}
+          onChange={(e) => setIntervalValue(Math.max(1, parseInt(e.target.value) || 1))}
+          className="w-16 px-2 py-1 text-xs bg-white border border-stone-200 rounded focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+        />
+        <select
+          value={intervalUnit}
+          onChange={(e) => setIntervalUnit(e.target.value as IntervalUnit)}
+          className="px-2 py-1 text-xs bg-white border border-stone-200 rounded focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+        >
+          <option value="hours">hours</option>
+          <option value="days">days</option>
+          <option value="weeks">weeks</option>
+        </select>
         <button
           onClick={() => {
             setText('');
+            setIntervalValue(1);
+            setIntervalUnit('days');
             setIsAdding(false);
           }}
           className="ml-auto text-xs text-stone-400 hover:text-stone-600"

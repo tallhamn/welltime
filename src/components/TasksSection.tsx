@@ -5,14 +5,14 @@ import { AddTaskRow } from './AddTaskRow';
 
 interface TasksSectionProps {
   tasks: Task[];
+  searchQuery: string;
   onToggle: (id: string) => void;
   onAddReflection: (id: string, reflection: string) => void;
   onAddSubtask: (parentId: string, text: string) => void;
   onAddTask: (text: string) => void;
 }
 
-export function TasksSection({ tasks, onToggle, onAddReflection, onAddSubtask, onAddTask }: TasksSectionProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+export function TasksSection({ tasks, searchQuery, onToggle, onAddReflection, onAddSubtask, onAddTask }: TasksSectionProps) {
   const [showCompleted, setShowCompleted] = useState(false);
 
   // Filter tasks by search query
@@ -48,71 +48,25 @@ export function TasksSection({ tasks, onToggle, onAddReflection, onAddSubtask, o
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-stone-100">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Tasks</span>
-        </div>
-
-        {/* Search and filters */}
-        <div className="space-y-2">
-          <div className="relative">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks..."
-              className="w-full pl-9 pr-3 py-1.5 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red focus:bg-white transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600"
-              >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between">
+        <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Tasks</span>
+        <button
+          onClick={() => setShowCompleted(!showCompleted)}
+          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
+        >
+          <div
+            className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${
+              showCompleted ? 'bg-kyoto-red border-kyoto-red' : 'border-stone-300'
+            }`}
+          >
+            {showCompleted && (
+              <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
             )}
           </div>
-
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setShowCompleted(!showCompleted)}
-              className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 transition-colors"
-            >
-              <div
-                className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-colors ${
-                  showCompleted ? 'bg-kyoto-red border-kyoto-red' : 'border-stone-300'
-                }`}
-              >
-                {showCompleted && (
-                  <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-              Show completed
-            </button>
-
-            <span className="text-xs text-stone-400">
-              {visibleTasks.length} task{visibleTasks.length !== 1 ? 's' : ''}
-              {searchQuery && ' found'}
-            </span>
-          </div>
-        </div>
+          Show completed
+        </button>
       </div>
 
       <div className="px-5 py-2">

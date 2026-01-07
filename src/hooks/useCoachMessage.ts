@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Habit } from '@/lib/types';
-import { getCurrentWindow } from '@/lib/utils';
-import { TIME_WINDOWS } from '@/lib/types';
+import { isHabitAvailable } from '@/lib/utils';
 
 interface LastAction {
   text: string;
@@ -13,9 +12,11 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
   const [lastAction, setLastAction] = useState<LastAction | null>(null);
 
   useEffect(() => {
-    const currentWindow = getCurrentWindow(currentHour);
-    const currentHabits = habits.filter((h) => h.timeWindow === currentWindow && !h.completedToday);
-    const completedCount = habits.filter((h) => h.completedToday).length;
+    const availableHabits = habits.filter((h) => isHabitAvailable(h.lastCompleted, h.repeatIntervalHours));
+    const completedCount = habits.filter((h) =>
+      h.lastCompleted &&
+      (Date.now() - new Date(h.lastCompleted).getTime()) < (h.repeatIntervalHours * 60 * 60 * 1000)
+    ).length;
     const total = habits.length;
 
     let newMessage = '';
@@ -32,11 +33,11 @@ export function useCoachMessage(habits: Habit[], currentHour: number) {
       // All done - self-talk
       const messages = [`All ${total} crushed. I carry the boats.`, `Full sweep. This is who I am.`];
       newMessage = messages[Math.floor(Math.random() * messages.length)];
-    } else if (currentHabits.length > 0) {
+    } else if (availableHabits.length > 0) {
       // Coaching mode - second person
       const messages = [
-        `${currentHabits[0].text} is up. You know what to do.`,
-        `${TIME_WINDOWS[currentWindow].label} block. ${currentHabits[0].text} is waiting.`,
+        `${availableHabits[0].text} is up. You know what to do.`,
+        `${availableHabits.length} ready. ${availableHabits[0].text} is waiting.`,
       ];
       newMessage = messages[Math.floor(Math.random() * messages.length)];
     } else if (completedCount > 0) {

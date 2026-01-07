@@ -20,9 +20,9 @@ export const TIME_WINDOWS: Record<TimeWindow, TimeWindowDefinition> = {
 export interface Habit {
   id: string;
   text: string;
-  timeWindow: TimeWindow;
+  repeatIntervalHours: number; // How often the habit repeats (default: 24)
+  lastCompleted: string | null; // ISO timestamp of when it was last completed
   streak: number;
-  completedToday: boolean;
   reflections: string[];
 }
 

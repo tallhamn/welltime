@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Habit, Task, TimeWindow, LLMAction, AppState } from '@/lib/types';
+import type { Habit, Task, LLMAction, AppState } from '@/lib/types';
 import { generateId, getTodayDate } from '@/lib/utils';
 import { EXAMPLE_HABITS, EXAMPLE_TASKS } from '@/lib/exampleData';
 import { useCoachMessage } from '@/hooks/useCoachMessage';
@@ -15,6 +15,7 @@ function App() {
   const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
   const [chatOpen, setChatOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Undo functionality
   const [undoState, setUndoState] = useState<AppState | null>(null);
@@ -77,22 +78,37 @@ function App() {
     const habit = habits.find((h) => h.id === id);
     if (!habit) return;
 
-    const wasCompleted = habit.completedToday;
+    const now = new Date().toISOString();
+    const wasAvailable = !habit.lastCompleted ||
+      (Date.now() - new Date(habit.lastCompleted).getTime()) >= (habit.repeatIntervalHours * 60 * 60 * 1000);
 
-    setHabits((prev) =>
-      prev.map((h) =>
-        h.id === id
-          ? {
-              ...h,
-              completedToday: !h.completedToday,
-              streak: !h.completedToday ? h.streak + 1 : Math.max(0, h.streak - 1),
-            }
-          : h
-      )
-    );
-
-    if (!wasCompleted) {
+    if (wasAvailable) {
+      // Checking habit: mark as completed
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === id
+            ? {
+                ...h,
+                lastCompleted: now,
+                streak: h.streak + 1,
+              }
+            : h
+        )
+      );
       triggerReinforcement(habit.text, habit.streak);
+    } else {
+      // Unchecking habit: make it available again
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === id
+            ? {
+                ...h,
+                lastCompleted: null,
+                streak: Math.max(0, h.streak - 1),
+              }
+            : h
+        )
+      );
     }
   };
 
@@ -100,8 +116,8 @@ function App() {
     setHabits((prev) => prev.filter((h) => h.id !== id));
   };
 
-  const changeHabitWindow = (id: string, windowKey: string) => {
-    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, timeWindow: windowKey as TimeWindow } : h)));
+  const updateHabitInterval = (id: string, intervalHours: number) => {
+    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, repeatIntervalHours: intervalHours } : h)));
   };
 
   const updateHabitText = (id: string, text: string) => {
@@ -114,7 +130,7 @@ function App() {
     );
   };
 
-  const addHabit = (text: string, timeWindow: string) => {
+  const addHabit = (text: string, intervalHours: number) => {
     if (text.trim()) {
       setHabits((prev) => [
         ...prev,
@@ -122,8 +138,8 @@ function App() {
           id: generateId(),
           text: text.trim(),
           streak: 0,
-          completedToday: false,
-          timeWindow: timeWindow as TimeWindow,
+          lastCompleted: null,
+          repeatIntervalHours: intervalHours,
           reflections: [],
         },
       ]);
@@ -241,43 +257,60 @@ function App() {
         <div className="max-w-2xl mx-auto px-4 py-6">
           {/* Header */}
           <div className="bg-white rounded-2xl shadow-sm p-4 mb-5">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h1 className="text-lg font-semibold text-stone-800 mb-1">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                </h1>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-stone-400">
-                    {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                  </p>
-                  <select
-                    value={currentHour}
-                    onChange={(e) => setCurrentHour(Number(e.target.value))}
-                    className="text-xs bg-stone-50 border border-stone-200 rounded px-2 py-0.5 text-stone-500 focus:outline-none focus:ring-1 focus:ring-kyoto-red"
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-lg font-semibold text-stone-800">WELLTIME</h1>
+              <div className="flex-1 max-w-md mx-4">
+                <div className="relative">
+                  <svg
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
                   >
-                    {[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map((h) => (
-                      <option key={h} value={h}>
-                        {h}:00
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className="text-right">
-                  <div className="text-2xl font-semibold text-stone-800">
-                    {habits.filter(h => h.completedToday).length}
-                  </div>
-                  <div className="text-xs text-stone-400">of {habits.length}</div>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search habits & tasks..."
+                    className="w-full pl-9 pr-3 py-1.5 text-sm bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-kyoto-red focus:bg-white transition-colors"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-400 hover:text-stone-600"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="border-t border-stone-100 pt-3 mt-3 flex items-center justify-between">
-              <p className="text-sm text-stone-600 flex-1">{coachMessage}</p>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <span className="text-2xl font-semibold text-stone-800">
+                    {habits.filter(h =>
+                      h.lastCompleted &&
+                      (Date.now() - new Date(h.lastCompleted).getTime()) < (h.repeatIntervalHours * 60 * 60 * 1000)
+                    ).length}
+                  </span>
+                  <span className="text-sm text-stone-400"> of {habits.length}</span>
+                </div>
+              </div>
+              <p className="text-sm text-stone-600 flex-1 mx-4">{coachMessage}</p>
               <button
                 onClick={() => setChatOpen(true)}
-                className="ml-3 px-3 py-1.5 bg-kyoto-light text-kyoto-red text-xs font-semibold rounded-lg hover:bg-kyoto-medium transition-colors"
+                className="px-3 py-1.5 bg-kyoto-light text-kyoto-red text-xs font-semibold rounded-lg hover:bg-kyoto-medium transition-colors"
               >
                 Plan
               </button>
@@ -288,9 +321,10 @@ function App() {
         <HabitsSection
           habits={habits}
           currentHour={currentHour}
+          searchQuery={searchQuery}
           onToggle={toggleHabit}
           onDelete={deleteHabit}
-          onChangeWindow={changeHabitWindow}
+          onUpdateInterval={updateHabitInterval}
           onUpdateText={updateHabitText}
           onAddReflection={addHabitReflection}
           onAddHabit={addHabit}
@@ -302,6 +336,7 @@ function App() {
         {/* Tasks Section */}
         <TasksSection
           tasks={tasks}
+          searchQuery={searchQuery}
           onToggle={toggleTask}
           onAddReflection={addTaskReflection}
           onAddSubtask={addSubtask}

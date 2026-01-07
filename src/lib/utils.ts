@@ -78,3 +78,43 @@ export function shouldResetHabits(lastResetDate: string | null): boolean {
   if (!lastResetDate) return true;
   return lastResetDate !== getTodayDate();
 }
+
+/**
+ * Check if a habit is currently available (ready to be completed)
+ */
+export function isHabitAvailable(lastCompleted: string | null, intervalHours: number): boolean {
+  if (!lastCompleted) return true; // Never completed, always available
+
+  const lastCompletedTime = new Date(lastCompleted).getTime();
+  const now = Date.now();
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+
+  return now - lastCompletedTime >= intervalMs;
+}
+
+/**
+ * Get hours until a habit is available (negative if already available)
+ */
+export function getHoursUntilAvailable(lastCompleted: string | null, intervalHours: number): number {
+  if (!lastCompleted) return -1; // Already available
+
+  const lastCompletedTime = new Date(lastCompleted).getTime();
+  const now = Date.now();
+  const intervalMs = intervalHours * 60 * 60 * 1000;
+  const nextAvailableTime = lastCompletedTime + intervalMs;
+
+  const msUntilAvailable = nextAvailableTime - now;
+  return msUntilAvailable / (60 * 60 * 1000); // Convert to hours
+}
+
+/**
+ * Format interval hours for display
+ */
+export function formatInterval(hours: number): string {
+  if (hours < 24) {
+    return `${hours}h`;
+  } else {
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  }
+}

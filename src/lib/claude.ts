@@ -32,16 +32,22 @@ function generateSystemPrompt(habits: Habit[], tasks: Task[], currentHour: numbe
 
   const habitsSummary = habits
     .map((h) => {
-      const status = h.completedToday ? '✓' : '○';
-      const streak = h.streak > 0 ? `🔥${h.streak}` : '';
+      const available = !h.lastCompleted ||
+        (Date.now() - new Date(h.lastCompleted).getTime()) >= (h.repeatIntervalHours * 60 * 60 * 1000);
+      const status = available ? '○' : '✓';
+      const streak = h.streak > 0 ? `${h.streak}d` : '';
+      const interval = h.repeatIntervalHours < 24 ? `${h.repeatIntervalHours}h` : `${Math.floor(h.repeatIntervalHours / 24)}d`;
       const reflections = h.reflections.length > 0 ? `\n    Reflections: ${h.reflections.slice(-2).map(r => `"${r}"`).join(', ')}` : '';
-      return `  ${status} ${h.text} (${h.timeWindow}) ${streak}${reflections}`;
+      return `  ${status} ${h.text} (every ${interval}) ${streak}${reflections}`;
     })
     .join('\n');
 
   const tasksSummary = flattenTasks(tasks).join('\n');
 
-  const completedHabits = habits.filter((h) => h.completedToday).length;
+  const completedHabits = habits.filter((h) =>
+    h.lastCompleted &&
+    (Date.now() - new Date(h.lastCompleted).getTime()) < (h.repeatIntervalHours * 60 * 60 * 1000)
+  ).length;
   const totalHabits = habits.length;
 
   return `You are a productivity assistant helping the user plan their day and break down tasks. The user follows a system-based approach (habits + tasks).

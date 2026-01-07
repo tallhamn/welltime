@@ -9,9 +9,9 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
 
   habits.forEach((habit) => {
     md += `## ${habit.text}\n`;
-    md += `- Window: ${habit.timeWindow}\n`;
+    md += `- Interval: ${habit.repeatIntervalHours}h\n`;
     md += `- Streak: ${habit.streak}\n`;
-    md += `- Completed today: ${habit.completedToday ? 'yes' : 'no'}\n`;
+    md += `- Last completed: ${habit.lastCompleted || 'never'}\n`;
     if (habit.reflections && habit.reflections.length > 0) {
       md += `- Reflections:\n`;
       habit.reflections.forEach((r) => {
@@ -85,18 +85,19 @@ export function parseMarkdown(md: string): AppState {
         currentHabit = {
           id: generateId(),
           text: line.slice(3),
-          timeWindow: 'morning',
+          repeatIntervalHours: 24,
           streak: 0,
-          completedToday: false,
+          lastCompleted: null,
           reflections: [],
         };
       } else if (currentHabit) {
-        if (line.startsWith('- Window: ')) {
-          currentHabit.timeWindow = line.slice(10) as any;
+        if (line.startsWith('- Interval: ')) {
+          currentHabit.repeatIntervalHours = parseInt(line.slice(12)) || 24;
         } else if (line.startsWith('- Streak: ')) {
           currentHabit.streak = parseInt(line.slice(10)) || 0;
-        } else if (line.startsWith('- Completed today: ')) {
-          currentHabit.completedToday = line.slice(19) === 'yes';
+        } else if (line.startsWith('- Last completed: ')) {
+          const value = line.slice(18);
+          currentHabit.lastCompleted = value === 'never' ? null : value;
         } else if (line.startsWith('  - ')) {
           currentHabit.reflections.push(line.slice(4));
         }
