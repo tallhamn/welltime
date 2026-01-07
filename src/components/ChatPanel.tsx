@@ -54,11 +54,13 @@ export function ChatPanel({ isOpen, onClose, habits, tasks, currentHour, onActio
     setStreamingText('');
 
     try {
-      // Get conversation history for context
-      const conversationHistory = messages.map((msg) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.text,
-      }));
+      // Get conversation history for context (filter out system messages)
+      const conversationHistory = messages
+        .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+        .map((msg) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.text,
+        }));
 
       // Stream response from Claude
       let fullResponse = '';
