@@ -136,6 +136,7 @@ function App() {
                 ...h,
                 lastCompleted: now,
                 totalCompletions: h.totalCompletions + 1,
+                forcedAvailable: false, // Clear forced availability when completing
               }
             : h
         )
@@ -150,27 +151,26 @@ function App() {
                 ...h,
                 lastCompleted: null,
                 totalCompletions: Math.max(0, h.totalCompletions - 1),
+                forcedAvailable: false,
               }
             : h
         )
       );
       console.log(`[Habit] Unchecked "${habit.text}"`);
     } else if (action === 'wakeup') {
-      // Wake up from standby: make habit available again without changing completion count
-      // Set lastCompleted to exactly repeatIntervalHours ago, making it due now
-      const wakeupTime = new Date();
-      wakeupTime.setHours(wakeupTime.getHours() - habit.repeatIntervalHours);
+      // Wake up from standby: make habit available without changing completion time/count
+      // Just set forcedAvailable flag - preserves real lastCompleted timestamp
       setHabits((prev) =>
         prev.map((h) =>
           h.id === id
             ? {
                 ...h,
-                lastCompleted: wakeupTime.toISOString(),
+                forcedAvailable: true,
               }
             : h
         )
       );
-      console.log(`[Habit] Woke up "${habit.text}" - now available again`);
+      console.log(`[Habit] Woke up "${habit.text}" - now available again (forced)`);
     }
   };
 

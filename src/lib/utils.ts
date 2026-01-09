@@ -82,7 +82,10 @@ export function shouldResetHabits(lastResetDate: string | null): boolean {
 /**
  * Check if a habit is currently available (ready to be completed)
  */
-export function isHabitAvailable(lastCompleted: string | null, intervalHours: number): boolean {
+export function isHabitAvailable(lastCompleted: string | null, intervalHours: number, forcedAvailable?: boolean): boolean {
+  // If habit is forced available (woken up from standby), it's always available
+  if (forcedAvailable) return true;
+
   if (!lastCompleted) return true; // Never completed, always available
 
   const lastCompletedTime = new Date(lastCompleted).getTime();

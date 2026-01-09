@@ -24,6 +24,7 @@ export interface Habit {
   lastCompleted: string | null; // ISO timestamp of when it was last completed
   totalCompletions: number; // All-time completion count
   reflections: string[];
+  forcedAvailable?: boolean; // If true, habit is available even if interval hasn't passed
 }
 
 // Task model (recursive for subtasks)

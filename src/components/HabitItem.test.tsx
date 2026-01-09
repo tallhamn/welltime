@@ -403,7 +403,7 @@ describe('HabitItem', () => {
       };
 
       const onToggle = vi.fn();
-      const { container } = render(
+      const { container, rerender } = render(
         <HabitItem
           {...mockProps}
           habit={restingHabit}
@@ -420,6 +420,16 @@ describe('HabitItem', () => {
 
       // Should call onToggle with 'wakeup' action (makes habit available without reducing count)
       expect(onToggle).toHaveBeenCalledWith('test-habit-1', 'wakeup');
+
+      // Simulate the backend updating forcedAvailable to true
+      const wokeUpHabit = { ...restingHabit, forcedAvailable: true };
+      rerender(
+        <HabitItem
+          {...mockProps}
+          habit={wokeUpHabit}
+          onToggle={onToggle}
+        />
+      );
 
       // After waking up, should show empty checkbox that can be completed normally
       const checkbox = container.querySelector('.border-stone-300');
@@ -460,7 +470,7 @@ describe('HabitItem', () => {
       };
 
       const onToggle = vi.fn();
-      const { container } = render(
+      const { container, rerender } = render(
         <HabitItem
           {...mockProps}
           habit={restingHabit}
@@ -471,6 +481,16 @@ describe('HabitItem', () => {
       // Click power symbol to wake up
       const powerButton = container.querySelector('button');
       fireEvent.click(powerButton!);
+
+      // Simulate the backend updating forcedAvailable to true
+      const wokeUpHabit = { ...restingHabit, forcedAvailable: true };
+      rerender(
+        <HabitItem
+          {...mockProps}
+          habit={wokeUpHabit}
+          onToggle={onToggle}
+        />
+      );
 
       // Clear the mock to test the next call
       onToggle.mockClear();

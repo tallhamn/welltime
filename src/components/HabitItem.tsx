@@ -44,8 +44,8 @@ export function HabitItem({
   const [forcedDue, setForcedDue] = useState(false);
   const previousTotalCompletions = useRef(habit.totalCompletions);
 
-  // Determine habit state (can be overridden by forcedDue for wake-up)
-  const naturallyDue = isHabitAvailable(habit.lastCompleted, habit.repeatIntervalHours);
+  // Determine habit state (can be overridden by forcedAvailable or forcedDue for wake-up)
+  const naturallyDue = isHabitAvailable(habit.lastCompleted, habit.repeatIntervalHours, habit.forcedAvailable);
   const isDue = naturallyDue || forcedDue;
   const isResting = !isDue;
 
@@ -169,10 +169,8 @@ export function HabitItem({
 
   const handleWakeUp = () => {
     // Wake up from standby: make habit available again without changing completion count
+    // This sets forcedAvailable flag in the backend, which will trigger re-render
     onToggle(habit.id, 'wakeup');
-
-    // Then show empty checkbox that can be completed normally
-    setForcedDue(true); // Override the resting state to show checkbox
   };
 
   const handleSaveReflection = () => {
