@@ -1,7 +1,7 @@
 {
-  "productName": "Welltime",
+  "productName": "ClawKeeper",
   "version": "0.1.0",
-  "identifier": "com.welltime.app",
+  "identifier": "com.clawkeeper.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Welltime",
+        "title": "ClawKeeper",
         "width": 1000,
         "height": 800,
         "minWidth": 800,

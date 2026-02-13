@@ -28,7 +28,7 @@ export function SplashScreen({ onDismiss }: SplashScreenProps) {
       <div className="max-w-2xl px-8 text-center">
         {/* App Title */}
         <h1 className="text-4xl font-bold text-tokyo-blue mb-8 tracking-wide">
-          WELLTIME
+          CLAWKEEPER
         </h1>
 
         {/* Main Message */}
@@ -38,7 +38,7 @@ export function SplashScreen({ onDismiss }: SplashScreenProps) {
           </p>
 
           <p className="text-lg">
-            Track habits and tasks, stored as markdown for easy cross-agent access and editing.
+            Ask not what the claw can do for you -- but what you can do for the claw. Human and claw together strong.
           </p>
         </div>
 

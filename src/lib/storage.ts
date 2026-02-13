@@ -49,7 +49,7 @@ export function getDefaultState(): AppState {
     tasks: [
       {
         id: generateId(),
-        text: 'Explore Welltime',
+        text: 'Explore ClawKeeper',
         completed: false,
         completedAt: null,
         notes: [],

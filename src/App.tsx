@@ -33,7 +33,7 @@ function App() {
   // Check if splash screen should be shown for this version
   useEffect(() => {
     try {
-      const lastSeenVersion = localStorage.getItem('welltime_last_seen_version');
+      const lastSeenVersion = localStorage.getItem('clawkeeper_last_seen_version');
       if (lastSeenVersion !== APP_VERSION) {
         setShowSplash(true);
       }
@@ -45,7 +45,7 @@ function App() {
 
   const handleDismissSplash = () => {
     try {
-      localStorage.setItem('welltime_last_seen_version', APP_VERSION);
+      localStorage.setItem('clawkeeper_last_seen_version', APP_VERSION);
     } catch (error) {
       console.log('[Splash] localStorage not available');
     }
@@ -496,7 +496,7 @@ function App() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-tokyo-blue border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-tokyo-text-muted">Loading Welltime...</p>
+          <p className="text-tokyo-text-muted">Loading ClawKeeper...</p>
         </div>
       </div>
     );
@@ -509,7 +509,7 @@ function App() {
           {/* Header */}
           <div className="bg-tokyo-surface rounded-2xl p-4 mb-3">
             <div className="flex items-center gap-4">
-              <h1 className="text-lg font-semibold text-tokyo-blue">WELLTIME</h1>
+              <h1 className="text-lg font-semibold text-tokyo-blue">CLAWKEEPER</h1>
               <div className="flex-1 max-w-md">
                 <div className="relative">
                   <svg

@@ -9,8 +9,8 @@ export const APP_VERSION = '1.0.0';
 export const ENABLE_AUTO_REFLECTION = false; // Set to false to disable automatic reflection prompts
 
 // Storage paths
-// Local directory: ~/.welltime (iCloud can be configured later with proper entitlements)
-export const APP_DIR_NAME = '/.welltime';
+// Local directory: ~/.clawkeeper (iCloud can be configured later with proper entitlements)
+export const APP_DIR_NAME = '/.clawkeeper';
 export const CURRENT_MD_FILE = 'current.md';
 export const HISTORY_DIR = 'history';
 

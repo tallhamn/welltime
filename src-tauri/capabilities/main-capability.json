@@ -20,8 +20,8 @@
     {
       "identifier": "fs:scope",
       "allow": [
-        { "path": "$HOME/.welltime" },
-        { "path": "$HOME/.welltime/**" }
+        { "path": "$HOME/.clawkeeper" },
+        { "path": "$HOME/.clawkeeper/**" }
       ]
     },
     {

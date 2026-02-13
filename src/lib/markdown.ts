@@ -1,6 +1,21 @@
 import type { Habit, Task, AppState } from './types';
 import { generateId } from './utils';
 
+const ID_COMMENT_RE = /\s*<!-- id:\w+ -->/g;
+
+/**
+ * Extract the last embedded ID from a line and return the clean text.
+ * Returns [cleanText, id | null].
+ */
+function extractId(raw: string): [string, string | null] {
+  let lastId: string | null = null;
+  for (const m of raw.matchAll(/<!-- id:(\w+) -->/g)) {
+    lastId = m[1];
+  }
+  const clean = raw.replace(ID_COMMENT_RE, '').trim();
+  return [clean, lastId];
+}
+
 /**
  * Serialize habits and tasks to Markdown format
  */
@@ -8,7 +23,7 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
   let md = '# Habits\n\n';
 
   habits.forEach((habit) => {
-    md += `## ${habit.text}\n`;
+    md += `## ${habit.text} <!-- id:${habit.id} -->\n`;
     md += `- Interval: ${habit.repeatIntervalHours}h\n`;
     md += `- Total Completions: ${habit.totalCompletions}\n`;
     md += `- Last completed: ${habit.lastCompleted || 'never'}\n`;
@@ -26,7 +41,7 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     const indent = '  '.repeat(depth);
     const checkbox = task.completed ? '[x]' : '[ ]';
     const completedDate = task.completedAt ? ` (${task.completedAt})` : '';
-    md += `${indent}- ${checkbox} ${task.text}${completedDate}\n`;
+    md += `${indent}- ${checkbox} ${task.text}${completedDate} <!-- id:${task.id} -->\n`;
     if (task.notes && task.notes.length > 0) {
       task.notes.forEach((n) => {
         md += `${indent}  | [${n.createdAt}] ${n.text}\n`;
@@ -38,7 +53,7 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
   };
 
   tasks.forEach((task) => {
-    md += `## ${task.text}\n`;
+    md += `## ${task.text} <!-- id:${task.id} -->\n`;
     if (task.completed) {
       md += `- Status: completed${task.completedAt ? ` (${task.completedAt})` : ''}\n`;
     }
@@ -90,9 +105,10 @@ export function parseMarkdown(md: string): AppState {
     if (currentSection === 'habits') {
       if (line.startsWith('## ')) {
         if (currentHabit) habits.push(currentHabit);
+        const [text, id] = extractId(line.slice(3));
         currentHabit = {
-          id: generateId(),
-          text: line.slice(3),
+          id: id || generateId(),
+          text,
           repeatIntervalHours: 24,
           totalCompletions: 0,
           lastCompleted: null,
@@ -125,9 +141,10 @@ export function parseMarkdown(md: string): AppState {
     if (currentSection === 'tasks') {
       if (line.startsWith('## ')) {
         if (currentTask) tasks.push(currentTask);
+        const [text, id] = extractId(line.slice(3));
         currentTask = {
-          id: generateId(),
-          text: line.slice(3),
+          id: id || generateId(),
+          text,
           completed: false,
           completedAt: null,
           notes: [],
@@ -147,7 +164,10 @@ export function parseMarkdown(md: string): AppState {
             currentTask.notes.push({ createdAt: noteMatch[1], text: noteMatch[2] });
           }
         } else if (line.match(/^(\s*)- \[(x| )\] /)) {
-          const match = line.match(/^(\s*)- \[(x| )\] (.+?)(?:\s+\((\d{4}-\d{2}-\d{2})\))?$/);
+          // Extract and strip all ID comments before matching
+          const [, lineId] = extractId(line);
+          const cleanLine = line.replace(ID_COMMENT_RE, '');
+          const match = cleanLine.match(/^(\s*)- \[(x| )\] (.+?)(?:\s+\((\d{4}-\d{2}-\d{2})\))?$/);
           if (match) {
             const depth = match[1].length / 2;
             const completed = match[2] === 'x';
@@ -155,7 +175,7 @@ export function parseMarkdown(md: string): AppState {
             const completedAt = match[4] || null;
 
             const newTask: Task = {
-              id: generateId(),
+              id: lineId || generateId(),
               text,
               completed,
               completedAt,
@@ -197,6 +217,47 @@ export function parseMarkdown(md: string): AppState {
   if (currentSection === 'tasks' && currentTask) {
     tasks.push(currentTask);
   }
+
+  return healIds({ habits, tasks });
+}
+
+/**
+ * Heal duplicate or missing IDs across all habits and tasks.
+ * Returns a new state with unique IDs assigned where needed.
+ */
+export function healIds(state: AppState): AppState {
+  const seen = new Set<string>();
+
+  function needsNewId(id: string): boolean {
+    if (!id || seen.has(id)) return true;
+    seen.add(id);
+    return false;
+  }
+
+  function healTask(task: Task): Task {
+    const id = needsNewId(task.id) ? generateId() : task.id;
+    if (id !== task.id || task.children.length > 0) {
+      // Need to ensure the new ID is tracked
+      if (id !== task.id) seen.add(id);
+      return {
+        ...task,
+        id,
+        children: task.children.map(healTask),
+      };
+    }
+    return { ...task, children: task.children.map(healTask) };
+  }
+
+  const habits = state.habits.map((habit) => {
+    if (needsNewId(habit.id)) {
+      const newId = generateId();
+      seen.add(newId);
+      return { ...habit, id: newId };
+    }
+    return habit;
+  });
+
+  const tasks = state.tasks.map(healTask);
 
   return { habits, tasks };
 }

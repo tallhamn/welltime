@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { serializeToMarkdown, parseMarkdown } from './markdown';
-import type { Habit, Task } from './types';
+import { serializeToMarkdown, parseMarkdown, healIds } from './markdown';
+import type { Habit, Task, AppState } from './types';
 
 describe('Markdown Serialization', () => {
   it('should serialize and parse habits correctly', () => {
@@ -237,5 +237,275 @@ describe('Markdown Serialization', () => {
     const parsed = parseMarkdown(markdown);
 
     expect(parsed.tasks[0].notes).toEqual([]);
+  });
+});
+
+describe('Stable IDs', () => {
+  it('should preserve IDs through serialize → parse round-trip', () => {
+    const habits: Habit[] = [
+      {
+        id: 'habit111',
+        text: 'Meditate',
+        repeatIntervalHours: 24,
+        totalCompletions: 0,
+        lastCompleted: null,
+        notes: [],
+      },
+    ];
+
+    const tasks: Task[] = [
+      {
+        id: 'task111',
+        text: 'Buy groceries',
+        completed: false,
+        completedAt: null,
+        notes: [],
+        children: [
+          {
+            id: 'sub111',
+            text: 'Milk',
+            completed: false,
+            completedAt: null,
+            notes: [],
+            children: [
+              {
+                id: 'subsub111',
+                text: 'Whole milk',
+                completed: false,
+                completedAt: null,
+                notes: [],
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const markdown = serializeToMarkdown(habits, tasks);
+    const parsed = parseMarkdown(markdown);
+
+    expect(parsed.habits[0].id).toBe('habit111');
+    expect(parsed.tasks[0].id).toBe('task111');
+    expect(parsed.tasks[0].children[0].id).toBe('sub111');
+    expect(parsed.tasks[0].children[0].children[0].id).toBe('subsub111');
+  });
+
+  it('should embed IDs as HTML comments in serialized output', () => {
+    const markdown = serializeToMarkdown(
+      [{ id: 'abc123', text: 'Run', repeatIntervalHours: 24, totalCompletions: 0, lastCompleted: null, notes: [] }],
+      [{ id: 'def456', text: 'Task', completed: false, completedAt: null, notes: [], children: [
+        { id: 'ghi789', text: 'Sub', completed: false, completedAt: null, notes: [], children: [] },
+      ] }],
+    );
+
+    expect(markdown).toContain('## Run <!-- id:abc123 -->');
+    expect(markdown).toContain('## Task <!-- id:def456 -->');
+    expect(markdown).toContain('- [ ] Sub <!-- id:ghi789 -->');
+  });
+
+  it('should generate IDs for markdown without ID comments (backward compatibility)', () => {
+    const legacyMarkdown = `# Habits
+
+## Meditate
+- Interval: 24h
+- Total Completions: 5
+- Last completed: never
+
+---
+
+# Tasks
+
+## Buy groceries
+- [ ] Milk
+  - [ ] Whole milk
+
+`;
+
+    const parsed = parseMarkdown(legacyMarkdown);
+
+    expect(parsed.habits[0].text).toBe('Meditate');
+    expect(parsed.habits[0].id).toBeTruthy();
+    expect(parsed.tasks[0].text).toBe('Buy groceries');
+    expect(parsed.tasks[0].id).toBeTruthy();
+    expect(parsed.tasks[0].children[0].text).toBe('Milk');
+    expect(parsed.tasks[0].children[0].id).toBeTruthy();
+    expect(parsed.tasks[0].children[0].children[0].text).toBe('Whole milk');
+    expect(parsed.tasks[0].children[0].children[0].id).toBeTruthy();
+
+    // All IDs should be unique
+    const ids = [
+      parsed.habits[0].id,
+      parsed.tasks[0].id,
+      parsed.tasks[0].children[0].id,
+      parsed.tasks[0].children[0].children[0].id,
+    ];
+    expect(new Set(ids).size).toBe(4);
+  });
+
+  it('should never include ID comments in parsed text fields', () => {
+    const habits: Habit[] = [
+      { id: 'h1', text: 'Meditate', repeatIntervalHours: 24, totalCompletions: 0, lastCompleted: null, notes: [] },
+    ];
+    const tasks: Task[] = [
+      { id: 't1', text: 'Buy groceries', completed: false, completedAt: null, notes: [], children: [
+        { id: 's1', text: 'Milk', completed: false, completedAt: null, notes: [], children: [] },
+      ] },
+    ];
+
+    // Serialize and parse multiple times to detect accumulation
+    let md = serializeToMarkdown(habits, tasks);
+    for (let i = 0; i < 5; i++) {
+      const parsed = parseMarkdown(md);
+      // Text must never contain ID comments
+      expect(parsed.habits[0].text).toBe('Meditate');
+      expect(parsed.habits[0].text).not.toContain('<!-- id:');
+      expect(parsed.tasks[0].text).toBe('Buy groceries');
+      expect(parsed.tasks[0].text).not.toContain('<!-- id:');
+      expect(parsed.tasks[0].children[0].text).toBe('Milk');
+      expect(parsed.tasks[0].children[0].text).not.toContain('<!-- id:');
+      md = serializeToMarkdown(parsed.habits, parsed.tasks);
+    }
+
+    // Serialized markdown should have exactly one ID comment per line
+    const idMatches = md.match(/<!-- id:\w+ -->/g) || [];
+    expect(idMatches).toHaveLength(3); // h1, t1, s1
+  });
+
+  it('should strip accumulated ID comments from corrupted markdown', () => {
+    const corruptedMarkdown = `# Habits
+
+## Meditate <!-- id:aaa --> <!-- id:bbb --> <!-- id:ccc -->
+- Interval: 24h
+- Total Completions: 0
+- Last completed: never
+
+---
+
+# Tasks
+
+## Buy groceries <!-- id:ddd --> <!-- id:eee -->
+- [ ] Milk <!-- id:fff --> <!-- id:ggg --> <!-- id:hhh -->
+
+`;
+
+    const parsed = parseMarkdown(corruptedMarkdown);
+
+    // Text should be clean
+    expect(parsed.habits[0].text).toBe('Meditate');
+    expect(parsed.habits[0].text).not.toContain('<!--');
+    expect(parsed.tasks[0].text).toBe('Buy groceries');
+    expect(parsed.tasks[0].text).not.toContain('<!--');
+    expect(parsed.tasks[0].children[0].text).toBe('Milk');
+    expect(parsed.tasks[0].children[0].text).not.toContain('<!--');
+
+    // Should use the last ID from the line
+    expect(parsed.habits[0].id).toBe('ccc');
+    expect(parsed.tasks[0].id).toBe('eee');
+    expect(parsed.tasks[0].children[0].id).toBe('hhh');
+
+    // Re-serializing should produce clean markdown with single IDs
+    const reserialized = serializeToMarkdown(parsed.habits, parsed.tasks);
+    expect((reserialized.match(/<!-- id:\w+ -->/g) || []).length).toBe(3);
+  });
+
+  it('should generate IDs for mixed markdown (some with, some without IDs)', () => {
+    const mixedMarkdown = `# Habits
+
+## Meditate <!-- id:keepme -->
+- Interval: 24h
+- Total Completions: 0
+- Last completed: never
+
+---
+
+# Tasks
+
+## Task with ID <!-- id:taskid1 -->
+- [ ] Sub without ID
+- [ ] Sub with ID <!-- id:subid1 -->
+
+`;
+
+    const parsed = parseMarkdown(mixedMarkdown);
+
+    expect(parsed.habits[0].id).toBe('keepme');
+    expect(parsed.tasks[0].id).toBe('taskid1');
+    expect(parsed.tasks[0].children[0].id).toBeTruthy();
+    expect(parsed.tasks[0].children[0].id).not.toBe('taskid1');
+    expect(parsed.tasks[0].children[1].id).toBe('subid1');
+  });
+});
+
+describe('healIds', () => {
+  it('should assign new IDs to duplicates', () => {
+    const state: AppState = {
+      habits: [
+        { id: 'dup', text: 'Habit', repeatIntervalHours: 24, totalCompletions: 0, lastCompleted: null, notes: [] },
+      ],
+      tasks: [
+        { id: 'dup', text: 'Task', completed: false, completedAt: null, notes: [], children: [] },
+      ],
+    };
+
+    const healed = healIds(state);
+
+    // First occurrence keeps ID, second gets a new one
+    expect(healed.habits[0].id).toBe('dup');
+    expect(healed.tasks[0].id).not.toBe('dup');
+    expect(healed.tasks[0].id).toBeTruthy();
+  });
+
+  it('should assign new IDs to empty IDs', () => {
+    const state: AppState = {
+      habits: [],
+      tasks: [
+        { id: '', text: 'Task', completed: false, completedAt: null, notes: [], children: [] },
+      ],
+    };
+
+    const healed = healIds(state);
+    expect(healed.tasks[0].id).toBeTruthy();
+    expect(healed.tasks[0].id.length).toBeGreaterThan(0);
+  });
+
+  it('should handle duplicate IDs in nested subtasks', () => {
+    const state: AppState = {
+      habits: [],
+      tasks: [
+        {
+          id: 'parent',
+          text: 'Parent',
+          completed: false,
+          completedAt: null,
+          notes: [],
+          children: [
+            { id: 'parent', text: 'Child with dup ID', completed: false, completedAt: null, notes: [], children: [] },
+          ],
+        },
+      ],
+    };
+
+    const healed = healIds(state);
+    expect(healed.tasks[0].id).toBe('parent');
+    expect(healed.tasks[0].children[0].id).not.toBe('parent');
+  });
+
+  it('should not modify unique IDs', () => {
+    const state: AppState = {
+      habits: [
+        { id: 'h1', text: 'Habit', repeatIntervalHours: 24, totalCompletions: 0, lastCompleted: null, notes: [] },
+      ],
+      tasks: [
+        { id: 't1', text: 'Task', completed: false, completedAt: null, notes: [], children: [
+          { id: 't2', text: 'Sub', completed: false, completedAt: null, notes: [], children: [] },
+        ] },
+      ],
+    };
+
+    const healed = healIds(state);
+    expect(healed.habits[0].id).toBe('h1');
+    expect(healed.tasks[0].id).toBe('t1');
+    expect(healed.tasks[0].children[0].id).toBe('t2');
   });
 });

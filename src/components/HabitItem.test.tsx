@@ -7,7 +7,7 @@ import type { Habit } from '@/lib/types';
 vi.mock('@/lib/constants', () => ({
   ENABLE_AUTO_REFLECTION: true,
   APP_VERSION: '1.0.0',
-  APP_DIR_NAME: '/.welltime',
+  APP_DIR_NAME: '/.clawkeeper',
   CURRENT_MD_FILE: 'current.md',
   HISTORY_DIR: 'history',
   MAX_SNAPSHOTS: 20,
