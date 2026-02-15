@@ -1,6 +1,6 @@
 # ClawKeeper
 
-Agentic task management. Habits and tasks stored as markdown, editable by humans and AI agents alike.
+CLI and Desktop App for agentic task management. Collaborate with Claude or OpenClaw on your tasks and habits.
 
 ## Architecture
 
