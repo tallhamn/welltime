@@ -21,24 +21,3 @@ export const MAX_SNAPSHOTS = 20;  // Keep last 20 snapshots
 export const UNDO_BAR_TIMEOUT = 10000;  // 10 seconds
 export const REINFORCEMENT_MESSAGE_DURATION = 4000;  // 4 seconds
 
-// Styling constants for task tree depth
-export const TASK_DEPTH_COLORS = [
-  'border-l-rose-200',
-  'border-l-amber-200',
-  'border-l-emerald-200',
-  'border-l-sky-200',
-];
-
-export const RELATIVE_TIME_BADGE_STYLES = {
-  future: 'bg-stone-100 text-stone-400',
-  upcoming: 'bg-amber-50 text-amber-600',
-  current: 'bg-emerald-50 text-emerald-600',
-  past: 'bg-stone-100 text-stone-400',
-};
-
-export const HABIT_STATE_OPACITY = {
-  future: 'opacity-40',
-  upcoming: 'opacity-70',
-  current: '',
-  past: 'opacity-50',
-};

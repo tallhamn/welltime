@@ -13,9 +13,6 @@ vi.mock('@/lib/constants', () => ({
   MAX_SNAPSHOTS: 20,
   UNDO_BAR_TIMEOUT: 10000,
   REINFORCEMENT_MESSAGE_DURATION: 4000,
-  TASK_DEPTH_COLORS: [],
-  RELATIVE_TIME_BADGE_STYLES: {},
-  HABIT_STATE_OPACITY: {},
 }));
 
 describe('TaskItem Component', () => {

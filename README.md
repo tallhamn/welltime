@@ -33,7 +33,7 @@ sudo chmod 770 /srv/clawkeeper
 ### 2. Install CLI to shared location
 
 ```bash
-sudo git clone /home/marcus/Documents/GitHub/welltime /opt/clawkeeper
+sudo git clone /home/marcus/Documents/GitHub/clawkeeper /opt/clawkeeper
 sudo chown -R marcus:clawkeeper /opt/clawkeeper
 sudo chmod -R g+rX /opt/clawkeeper
 cd /opt/clawkeeper && npm install
@@ -94,7 +94,7 @@ The skill at `.claude/skills/clawkeeper/SKILL.md` is automatically available whe
 ## Desktop App (Tauri)
 
 ```bash
-cd /home/marcus/Documents/GitHub/welltime
+cd /home/marcus/Documents/GitHub/clawkeeper
 npm install
 cp .env.example .env   # add VITE_ANTHROPIC_API_KEY (required), VITE_TAVILY_API_KEY (optional)
 npm run tauri:dev
