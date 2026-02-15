@@ -2,109 +2,29 @@
 
 CLI and Desktop App for agentic task management. Collaborate with Claude or OpenClaw on your tasks and habits.
 
-## Architecture
+All data is stored as human-readable markdown in `~/.clawkeeper/current.md`.
 
-```
-/opt/clawkeeper/              ← shared CLI install (read-only)
-/srv/clawkeeper/current.md    ← shared data (read-write by marcus + openclaw)
-/usr/local/bin/clawkeeper     ← symlink to /opt/clawkeeper/bin/clawkeeper
-~/.clawkeeper                 ← symlink to /srv/clawkeeper (for Tauri app)
-```
-
-Three access paths to the same data:
-- **Tauri desktop app** — runs as marcus, reads `~/.clawkeeper` (symlink)
-- **Claude Code** — runs as marcus in the dev repo, uses `npm run cli` with `CLAWKEEPER_DIR`
-- **OpenClaw** — runs as openclaw, uses `/usr/local/bin/clawkeeper` with `CLAWKEEPER_DIR`
-
-## Setup
-
-### 1. Shared group and data directory
+## Install
 
 ```bash
-sudo groupadd clawkeeper
-sudo usermod -aG clawkeeper marcus
-sudo usermod -aG clawkeeper openclaw
-
-sudo mkdir -p /srv/clawkeeper
-sudo chown marcus:clawkeeper /srv/clawkeeper
-sudo chmod 770 /srv/clawkeeper
+npm install -g clawkeeper
 ```
 
-### 2. Install CLI to shared location
+Or clone and link locally:
 
 ```bash
-sudo git clone /home/marcus/Documents/GitHub/clawkeeper /opt/clawkeeper
-sudo chown -R marcus:clawkeeper /opt/clawkeeper
-sudo chmod -R g+rX /opt/clawkeeper
-cd /opt/clawkeeper && npm install
-sudo ln -s /opt/clawkeeper/bin/clawkeeper /usr/local/bin/clawkeeper
+git clone https://github.com/tallhamn/clawkeeper.git
+cd clawkeeper && npm install
+npm link
 ```
 
-### 3. Migrate existing data and symlink
+## CLI
 
 ```bash
-# Move data to shared location
-cp ~/.clawkeeper/current.md /srv/clawkeeper/current.md
-rm -rf ~/.clawkeeper
-ln -s /srv/clawkeeper ~/.clawkeeper
+clawkeeper <entity> <command> [--flags]
 ```
 
-### 4. Set CLAWKEEPER_DIR for CLI usage
-
-Add to `~/.bashrc` or `~/.zshrc`:
-
-```bash
-export CLAWKEEPER_DIR=/srv/clawkeeper
-```
-
-### 5. OpenClaw systemd service
-
-```bash
-sudo systemctl edit openclaw-gateway.service
-```
-
-Add:
-
-```ini
-[Service]
-Environment=CLAWKEEPER_DIR=/srv/clawkeeper
-ReadWritePaths=/srv/clawkeeper
-ReadOnlyPaths=/opt/clawkeeper
-```
-
-Then:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart openclaw-gateway
-```
-
-### 6. Install OpenClaw skill
-
-```bash
-sudo -u openclaw mkdir -p /home/openclaw/.openclaw/skills/clawkeeper
-sudo cp /opt/clawkeeper/skills/clawkeeper/SKILL.md /home/openclaw/.openclaw/skills/clawkeeper/
-sudo chown -R openclaw:openclaw /home/openclaw/.openclaw/skills/clawkeeper
-```
-
-### 7. Claude Code skill
-
-The skill at `.claude/skills/clawkeeper/SKILL.md` is automatically available when Claude Code runs in the dev repo. No extra setup needed.
-
-## Desktop App (Tauri)
-
-```bash
-cd /home/marcus/Documents/GitHub/clawkeeper
-npm install
-cp .env.example .env   # add VITE_ANTHROPIC_API_KEY (required), VITE_TAVILY_API_KEY (optional)
-npm run tauri:dev
-```
-
-The Tauri app reads `~/.clawkeeper/current.md` which symlinks to `/srv/clawkeeper/current.md`.
-
-## CLI Reference
-
-All commands return JSON. Use `--id` for exact ID match, `--text` for fuzzy substring match.
+All commands return JSON. Use `--id` for exact match, `--text` for fuzzy substring match.
 
 | Command | Description |
 |---------|-------------|
@@ -123,10 +43,31 @@ All commands return JSON. Use `--id` for exact ID match, `--text` for fuzzy subs
 | `habit add-note --text "..." --note "..."` | Add note to habit |
 | `state show` | Show full state |
 
-## Updating the shared CLI
-
-After pulling changes in the dev repo:
+## Desktop App
 
 ```bash
-cd /opt/clawkeeper && sudo -u marcus git pull origin main && npm install
+npm install
+cp .env.example .env   # add VITE_ANTHROPIC_API_KEY
+npm run tauri:dev
+```
+
+The desktop app includes a Planning panel that routes through OpenClaw when available, falling back to the Anthropic API.
+
+## OpenClaw Integration
+
+ClawKeeper ships as an [OpenClaw](https://openclaw.ai) plugin. When installed, your Claw can manage tasks and habits via the CLI skill, and optionally check in on your habits via heartbeat.
+
+To share data between the desktop app and OpenClaw, point both at the same directory:
+
+```bash
+export CLAWKEEPER_DIR=/srv/clawkeeper
+```
+
+## Development
+
+```bash
+npm install
+npm run dev          # Vite dev server
+npm run test         # Run tests
+npm run tauri:dev    # Desktop app
 ```
