@@ -26,6 +26,7 @@ clawkeeper task uncomplete --id <id>
 clawkeeper task edit --text "Old name" --new-text "New name"
 clawkeeper task delete --text "Buy groceries"
 clawkeeper task add-note --text "Buy groceries" --note "Check prices first"
+clawkeeper task edit-note --text "Buy groceries" --note "Check prices first" --new-note "Compare at two stores"
 clawkeeper task delete-note --text "Buy groceries" --note "Check prices first"
 ```
 
@@ -38,6 +39,8 @@ clawkeeper habit edit --text "Meditate" --new-text "Morning meditation" --interv
 clawkeeper habit delete --text "Meditate"
 clawkeeper habit complete --text "Meditate"
 clawkeeper habit add-note --text "Meditate" --note "Felt calm today"
+clawkeeper habit edit-note --text "Meditate" --note "Felt calm today" --new-note "Felt calm, 10 min session"
+clawkeeper habit delete-note --text "Meditate" --note "Felt calm today"
 ```
 
 ## State

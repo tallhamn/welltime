@@ -18,6 +18,8 @@ import {
   deleteHabit,
   completeHabit,
   addHabitNote,
+  editHabitNote,
+  deleteHabitNote,
 } from './operations';
 
 // ── Arg parser ──
@@ -221,6 +223,25 @@ function run() {
           if (!note) { fail('--note is required'); return; }
           state = addHabitNote(state, note, id, text);
           result = { noteAdded: true };
+          modified = true;
+          break;
+        }
+
+        case 'edit-note': {
+          const note = flags.note as string;
+          const newNote = flags['new-note'] as string;
+          if (!note || !newNote) { fail('--note and --new-note are required'); return; }
+          state = editHabitNote(state, note, newNote, id, text);
+          result = { noteEdited: true };
+          modified = true;
+          break;
+        }
+
+        case 'delete-note': {
+          const note = flags.note as string;
+          if (!note) { fail('--note is required'); return; }
+          state = deleteHabitNote(state, note, id, text);
+          result = { noteDeleted: true };
           modified = true;
           break;
         }

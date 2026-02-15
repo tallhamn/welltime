@@ -287,6 +287,31 @@ export function addHabitNote(state: AppState, noteText: string, id?: string, tex
   return { ...state, habits };
 }
 
+export function editHabitNote(state: AppState, oldNote: string, newNote: string, id?: string, text?: string): AppState {
+  if (!oldNote) throw new Error('--note is required');
+  if (!newNote) throw new Error('--new-note is required');
+  const habit = resolveHabit(state, id, text);
+  const noteIdx = habit.notes.findIndex(n => n.text === oldNote);
+  if (noteIdx === -1) throw new Error(`Note not found: ${oldNote}`);
+  const habits = state.habits.map(h => {
+    if (h.id !== habit.id) return h;
+    return { ...h, notes: h.notes.map((n, i) => i === noteIdx ? { ...n, text: newNote } : n) };
+  });
+  return { ...state, habits };
+}
+
+export function deleteHabitNote(state: AppState, noteText: string, id?: string, text?: string): AppState {
+  if (!noteText) throw new Error('--note is required');
+  const habit = resolveHabit(state, id, text);
+  const noteIdx = habit.notes.findIndex(n => n.text === noteText);
+  if (noteIdx === -1) throw new Error(`Note not found: ${noteText}`);
+  const habits = state.habits.map(h => {
+    if (h.id !== habit.id) return h;
+    return { ...h, notes: h.notes.filter((_, i) => i !== noteIdx) };
+  });
+  return { ...state, habits };
+}
+
 // ── State operations ──
 
 export function showState(state: AppState): AppState {
