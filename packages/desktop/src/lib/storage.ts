@@ -8,7 +8,6 @@ import {
 import { homeDir } from '@tauri-apps/api/path';
 import type { AppState, Snapshot, Task } from '@clawkeeper/shared/src/types';
 import { serializeToMarkdown, parseMarkdown } from '@clawkeeper/shared/src/markdown';
-import { generateId } from '@clawkeeper/shared/src/utils';
 import {
   APP_DIR_NAME,
   CURRENT_MD_FILE,
@@ -20,67 +19,8 @@ import {
  */
 export function getDefaultState(): AppState {
   return {
-    habits: [
-      {
-        id: generateId(),
-        text: 'Drink a glass of water',
-        repeatIntervalHours: 4, // Comes back throughout the day
-        lastCompleted: null,
-        totalCompletions: 0,
-        notes: [],
-      },
-      {
-        id: generateId(),
-        text: 'Hug someone I care about',
-        repeatIntervalHours: 24, // Once a day
-        lastCompleted: null,
-        totalCompletions: 0,
-        notes: [],
-      },
-      {
-        id: generateId(),
-        text: 'Write down something good that happened',
-        repeatIntervalHours: 24, // Once a day
-        lastCompleted: null,
-        totalCompletions: 0,
-        notes: [],
-      },
-    ],
-    tasks: [
-      {
-        id: generateId(),
-        text: 'Explore ClawKeeper',
-        completed: false,
-        completedAt: null,
-        notes: [],
-        children: [
-          {
-            id: generateId(),
-            text: 'Complete a habit and add a reflection',
-            completed: false,
-            completedAt: null,
-            notes: [],
-            children: [],
-          },
-          {
-            id: generateId(),
-            text: 'Check off this subtask to see how it works',
-            completed: false,
-            completedAt: null,
-            notes: [],
-            children: [],
-          },
-        ],
-      },
-      {
-        id: generateId(),
-        text: 'Plan something fun for this week',
-        completed: false,
-        completedAt: null,
-        notes: [],
-        children: [],
-      },
-    ],
+    habits: [],
+    tasks: [],
   };
 }
 
