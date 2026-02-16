@@ -19,11 +19,15 @@ If `CLAWKEEPER_DIR` is set in your environment, the CLI reads and writes data th
 ```bash
 clawkeeper task list
 clawkeeper task add --text "Buy groceries"
+clawkeeper task add --text "Buy groceries" --due-date 2026-03-15
 clawkeeper task add-subtask --parent-text "Buy groceries" --text "Milk"
 clawkeeper task complete --id <id>
 clawkeeper task complete --text "Buy groceries"
 clawkeeper task uncomplete --id <id>
 clawkeeper task edit --text "Old name" --new-text "New name"
+clawkeeper task edit --text "Old name" --due-date 2026-04-01
+clawkeeper task set-due-date --text "Buy groceries" --due-date 2026-03-15
+clawkeeper task set-due-date --text "Buy groceries" --due-date none
 clawkeeper task delete --text "Buy groceries"
 clawkeeper task add-note --text "Buy groceries" --note "Check prices first"
 clawkeeper task edit-note --text "Buy groceries" --note "Check prices first" --new-note "Compare at two stores"

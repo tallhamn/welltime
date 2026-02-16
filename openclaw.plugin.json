@@ -2,7 +2,7 @@
   "id": "clawkeeper",
   "name": "ClawKeeper",
   "description": "Tasks and habits that live in a plain markdown file on your machine. Free, private, and claw-native: your AI assistant can read, plan, and act on your to-do list without an API or cloud sync.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "skills": ["./skills/clawkeeper"],
   "configSchema": {
     "type": "object",
