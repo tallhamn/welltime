@@ -33,6 +33,8 @@ describe('HabitItem', () => {
     onUpdateInterval: vi.fn(),
     onUpdateText: vi.fn(),
     onAddNote: vi.fn(),
+    onEditNote: vi.fn(),
+    onDeleteNote: vi.fn(),
     revealedItem: null,
     onSetRevealed: vi.fn(),
   };
@@ -343,8 +345,8 @@ describe('HabitItem', () => {
     const habitWithNotes: Habit = {
       ...mockHabit,
       notes: [
-        { text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
-        { text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
+        { id: 'hn1', text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
+        { id: 'hn2', text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
       ],
     };
 
@@ -377,6 +379,46 @@ describe('HabitItem', () => {
       fireEvent.click(saveButton);
 
       expect(mockProps.onAddNote).toHaveBeenCalledWith('test-habit-1', 'New note');
+    });
+
+    it('should call onDeleteNote when deleting a note', () => {
+      const onDeleteNote = vi.fn();
+      const props = {
+        ...mockProps,
+        habit: habitWithNotes,
+        onDeleteNote,
+        revealedItem: { type: 'habit' as const, id: 'test-habit-1', mode: 'notes' as const },
+      };
+
+      render(<HabitItem {...props} />);
+
+      fireEvent.click(screen.getAllByText('Delete')[0]);
+
+      expect(onDeleteNote).toHaveBeenCalledWith('test-habit-1', 'hn1');
+    });
+
+    it('should allow editing a habit note inline', () => {
+      const onEditNote = vi.fn();
+      const props = {
+        ...mockProps,
+        habit: habitWithNotes,
+        onEditNote,
+        revealedItem: { type: 'habit' as const, id: 'test-habit-1', mode: 'notes' as const },
+      };
+
+      render(<HabitItem {...props} />);
+
+      // Click edit on first note
+      fireEvent.click(screen.getAllByText('Edit')[0]);
+
+      // Should show textarea with existing text
+      const textarea = screen.getByDisplayValue('First note');
+      fireEvent.change(textarea, { target: { value: 'Updated note' } });
+
+      // Save
+      fireEvent.click(screen.getAllByText('Save')[0]);
+
+      expect(onEditNote).toHaveBeenCalledWith('test-habit-1', 'hn1', 'Updated note');
     });
   });
 

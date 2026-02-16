@@ -171,7 +171,7 @@ export function moveTask(state: AppState, id: string | undefined, text: string |
 export function addTaskNote(state: AppState, noteText: string, id?: string, text?: string): AppState {
   if (!noteText) throw new Error('--note is required');
   const task = resolveTask(state, id, text);
-  const note: Note = { text: noteText, createdAt: new Date().toISOString() };
+  const note: Note = { id: generateId(), text: noteText, createdAt: new Date().toISOString() };
   const tasks = updateTaskInTree(state.tasks, task.id, t => ({
     ...t,
     notes: [...t.notes, note],
@@ -179,12 +179,24 @@ export function addTaskNote(state: AppState, noteText: string, id?: string, text
   return { ...state, tasks };
 }
 
-export function editTaskNote(state: AppState, oldNote: string, newNote: string, id?: string, text?: string): AppState {
-  if (!oldNote) throw new Error('--note is required');
+function findNoteIndex(notes: Note[], noteId?: string, noteText?: string): number {
+  if (noteId) {
+    const idx = notes.findIndex(n => n.id === noteId);
+    if (idx !== -1) return idx;
+  }
+  if (noteText) {
+    const idx = notes.findIndex(n => n.text === noteText);
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+export function editTaskNote(state: AppState, oldNote: string, newNote: string, id?: string, text?: string, noteId?: string): AppState {
+  if (!oldNote && !noteId) throw new Error('--note or --note-id is required');
   if (!newNote) throw new Error('--new-note is required');
   const task = resolveTask(state, id, text);
-  const noteIdx = task.notes.findIndex(n => n.text === oldNote);
-  if (noteIdx === -1) throw new Error(`Note not found: ${oldNote}`);
+  const noteIdx = findNoteIndex(task.notes, noteId, oldNote);
+  if (noteIdx === -1) throw new Error(`Note not found: ${noteId || oldNote}`);
   const tasks = updateTaskInTree(state.tasks, task.id, t => ({
     ...t,
     notes: t.notes.map((n, i) => i === noteIdx ? { ...n, text: newNote } : n),
@@ -192,11 +204,11 @@ export function editTaskNote(state: AppState, oldNote: string, newNote: string, 
   return { ...state, tasks };
 }
 
-export function deleteTaskNote(state: AppState, noteText: string, id?: string, text?: string): AppState {
-  if (!noteText) throw new Error('--note is required');
+export function deleteTaskNote(state: AppState, noteText: string, id?: string, text?: string, noteId?: string): AppState {
+  if (!noteText && !noteId) throw new Error('--note or --note-id is required');
   const task = resolveTask(state, id, text);
-  const noteIdx = task.notes.findIndex(n => n.text === noteText);
-  if (noteIdx === -1) throw new Error(`Note not found: ${noteText}`);
+  const noteIdx = findNoteIndex(task.notes, noteId, noteText);
+  if (noteIdx === -1) throw new Error(`Note not found: ${noteId || noteText}`);
   const tasks = updateTaskInTree(state.tasks, task.id, t => ({
     ...t,
     notes: t.notes.filter((_, i) => i !== noteIdx),
@@ -285,7 +297,7 @@ export function completeHabit(state: AppState, id?: string, text?: string): AppS
 export function addHabitNote(state: AppState, noteText: string, id?: string, text?: string): AppState {
   if (!noteText) throw new Error('--note is required');
   const habit = resolveHabit(state, id, text);
-  const note: Note = { text: noteText, createdAt: new Date().toISOString() };
+  const note: Note = { id: generateId(), text: noteText, createdAt: new Date().toISOString() };
   const habits = state.habits.map(h => {
     if (h.id !== habit.id) return h;
     return { ...h, notes: [...h.notes, note] };
@@ -293,12 +305,12 @@ export function addHabitNote(state: AppState, noteText: string, id?: string, tex
   return { ...state, habits };
 }
 
-export function editHabitNote(state: AppState, oldNote: string, newNote: string, id?: string, text?: string): AppState {
-  if (!oldNote) throw new Error('--note is required');
+export function editHabitNote(state: AppState, oldNote: string, newNote: string, id?: string, text?: string, noteId?: string): AppState {
+  if (!oldNote && !noteId) throw new Error('--note or --note-id is required');
   if (!newNote) throw new Error('--new-note is required');
   const habit = resolveHabit(state, id, text);
-  const noteIdx = habit.notes.findIndex(n => n.text === oldNote);
-  if (noteIdx === -1) throw new Error(`Note not found: ${oldNote}`);
+  const noteIdx = findNoteIndex(habit.notes, noteId, oldNote);
+  if (noteIdx === -1) throw new Error(`Note not found: ${noteId || oldNote}`);
   const habits = state.habits.map(h => {
     if (h.id !== habit.id) return h;
     return { ...h, notes: h.notes.map((n, i) => i === noteIdx ? { ...n, text: newNote } : n) };
@@ -306,11 +318,11 @@ export function editHabitNote(state: AppState, oldNote: string, newNote: string,
   return { ...state, habits };
 }
 
-export function deleteHabitNote(state: AppState, noteText: string, id?: string, text?: string): AppState {
-  if (!noteText) throw new Error('--note is required');
+export function deleteHabitNote(state: AppState, noteText: string, id?: string, text?: string, noteId?: string): AppState {
+  if (!noteText && !noteId) throw new Error('--note or --note-id is required');
   const habit = resolveHabit(state, id, text);
-  const noteIdx = habit.notes.findIndex(n => n.text === noteText);
-  if (noteIdx === -1) throw new Error(`Note not found: ${noteText}`);
+  const noteIdx = findNoteIndex(habit.notes, noteId, noteText);
+  if (noteIdx === -1) throw new Error(`Note not found: ${noteId || noteText}`);
   const habits = state.habits.map(h => {
     if (h.id !== habit.id) return h;
     return { ...h, notes: h.notes.filter((_, i) => i !== noteIdx) };

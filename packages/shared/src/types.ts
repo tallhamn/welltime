@@ -29,6 +29,7 @@ export interface Habit {
 
 // Note model
 export interface Note {
+  id: string;        // Stable identifier
   text: string;
   createdAt: string; // ISO timestamp
 }
@@ -86,6 +87,7 @@ export interface LLMAction {
   newParentText?: string;  // For move_task: new parent task name
   newParentId?: string;    // For move_task: new parent task id (or null for root)
   noteText?: string;       // For add_note/edit_note/delete_note: the note content
+  noteId?: string;         // For edit_note/delete_note: target note by id
   newNoteText?: string;    // For edit_note: the replacement text
   habitText?: string;
   habitId?: string;

@@ -12,8 +12,8 @@ describe('Markdown Serialization', () => {
         lastCompleted: '2025-01-07T10:00:00Z',
         repeatIntervalHours: 4,
         notes: [
-          { text: 'worked well today', createdAt: '2025-01-07T10:00:00Z' },
-          { text: 'stayed focused', createdAt: '2025-01-07T11:00:00Z' },
+          { id: 'n1', text: 'worked well today', createdAt: '2025-01-07T10:00:00Z' },
+          { id: 'n2', text: 'stayed focused', createdAt: '2025-01-07T11:00:00Z' },
         ],
       },
     ];
@@ -43,7 +43,7 @@ describe('Markdown Serialization', () => {
             completed: true,
             completedAt: '2025-01-05',
             notes: [
-              { text: 'took longer than expected', createdAt: '2025-01-05T12:00:00Z' },
+              { id: 'n3', text: 'took longer than expected', createdAt: '2025-01-05T12:00:00Z' },
             ],
             children: [],
           },
@@ -82,7 +82,7 @@ describe('Markdown Serialization', () => {
         completed: false,
         completedAt: null,
         notes: [
-          { text: 'reflection 1', createdAt: '2025-01-07T12:00:00Z' },
+          { id: 'n4', text: 'reflection 1', createdAt: '2025-01-07T12:00:00Z' },
         ],
         children: [],
       },
@@ -122,9 +122,9 @@ describe('Markdown Serialization', () => {
         completed: true,
         completedAt: '2025-01-05',
         notes: [
-          { text: 'first note', createdAt: '2025-01-05T10:00:00Z' },
-          { text: 'second note', createdAt: '2025-01-05T11:00:00Z' },
-          { text: 'third note', createdAt: '2025-01-05T12:00:00Z' },
+          { id: 'n5', text: 'first note', createdAt: '2025-01-05T10:00:00Z' },
+          { id: 'n6', text: 'second note', createdAt: '2025-01-05T11:00:00Z' },
+          { id: 'n7', text: 'third note', createdAt: '2025-01-05T12:00:00Z' },
         ],
         children: [],
       },
@@ -149,16 +149,16 @@ describe('Markdown Serialization', () => {
         completed: false,
         completedAt: null,
         notes: [
-          { text: 'Found the API docs at example.com', createdAt: '2026-02-12T10:30:00Z' },
-          { text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T11:00:00Z' },
+          { id: 'n8', text: 'Found the API docs at example.com', createdAt: '2026-02-12T10:30:00Z' },
+          { id: 'n9', text: 'Rate limit is 100 req/min', createdAt: '2026-02-12T11:00:00Z' },
         ],
         children: [],
       },
     ];
 
     const markdown = serializeToMarkdown([], tasks);
-    expect(markdown).toContain('| [2026-02-12T10:30:00Z] Found the API docs at example.com');
-    expect(markdown).toContain('| [2026-02-12T11:00:00Z] Rate limit is 100 req/min');
+    expect(markdown).toContain('| [2026-02-12T10:30:00Z] Found the API docs at example.com <!-- nid:n8 -->');
+    expect(markdown).toContain('| [2026-02-12T11:00:00Z] Rate limit is 100 req/min <!-- nid:n9 -->');
 
     const parsed = parseMarkdown(markdown);
     expect(parsed.tasks[0].notes).toHaveLength(2);
@@ -183,7 +183,7 @@ describe('Markdown Serialization', () => {
             completed: false,
             completedAt: null,
             notes: [
-              { text: 'Subtask note here', createdAt: '2026-02-12T12:00:00Z' },
+              { id: 'n10', text: 'Subtask note here', createdAt: '2026-02-12T12:00:00Z' },
             ],
             children: [],
           },
@@ -207,8 +207,8 @@ describe('Markdown Serialization', () => {
         completed: false,
         completedAt: null,
         notes: [
-          { text: 'a reflection', createdAt: '2026-02-12T09:00:00Z' },
-          { text: 'A note', createdAt: '2026-02-12T10:00:00Z' },
+          { id: 'n11', text: 'a reflection', createdAt: '2026-02-12T09:00:00Z' },
+          { id: 'n12', text: 'A note', createdAt: '2026-02-12T10:00:00Z' },
         ],
         children: [],
       },
@@ -367,7 +367,7 @@ describe('Stable IDs', () => {
       md = serializeToMarkdown(parsed.habits, parsed.tasks);
     }
 
-    // Serialized markdown should have exactly one ID comment per line
+    // Serialized markdown should have exactly one ID comment per entity
     const idMatches = md.match(/<!-- id:\w+ -->/g) || [];
     expect(idMatches).toHaveLength(3); // h1, t1, s1
   });
@@ -407,6 +407,94 @@ describe('Stable IDs', () => {
     // Re-serializing should produce clean markdown with single IDs
     const reserialized = serializeToMarkdown(parsed.habits, parsed.tasks);
     expect((reserialized.match(/<!-- id:\w+ -->/g) || []).length).toBe(3);
+  });
+
+  it('should preserve note IDs through serialize → parse round-trip', () => {
+    const habits: Habit[] = [
+      {
+        id: 'h1',
+        text: 'Meditate',
+        repeatIntervalHours: 24,
+        totalCompletions: 1,
+        lastCompleted: '2025-01-07T10:00:00Z',
+        notes: [
+          { id: 'hn1', text: 'felt calm', createdAt: '2025-01-07T10:00:00Z' },
+        ],
+      },
+    ];
+
+    const tasks: Task[] = [
+      {
+        id: 't1',
+        text: 'Buy groceries',
+        completed: false,
+        completedAt: null,
+        notes: [
+          { id: 'tn1', text: 'Check pantry first', createdAt: '2025-01-07T09:00:00Z' },
+          { id: 'tn2', text: 'Compare prices', createdAt: '2025-01-07T09:30:00Z' },
+        ],
+        children: [
+          {
+            id: 's1',
+            text: 'Milk',
+            completed: false,
+            completedAt: null,
+            notes: [
+              { id: 'sn1', text: 'Get whole milk', createdAt: '2025-01-07T10:00:00Z' },
+            ],
+            children: [],
+          },
+        ],
+      },
+    ];
+
+    const markdown = serializeToMarkdown(habits, tasks);
+    expect(markdown).toContain('<!-- nid:hn1 -->');
+    expect(markdown).toContain('<!-- nid:tn1 -->');
+    expect(markdown).toContain('<!-- nid:tn2 -->');
+    expect(markdown).toContain('<!-- nid:sn1 -->');
+
+    const parsed = parseMarkdown(markdown);
+
+    expect(parsed.habits[0].notes[0].id).toBe('hn1');
+    expect(parsed.habits[0].notes[0].text).toBe('felt calm');
+    expect(parsed.tasks[0].notes[0].id).toBe('tn1');
+    expect(parsed.tasks[0].notes[1].id).toBe('tn2');
+    expect(parsed.tasks[0].children[0].notes[0].id).toBe('sn1');
+
+    // Second roundtrip should be identical
+    const markdown2 = serializeToMarkdown(parsed.habits, parsed.tasks);
+    expect(markdown2).toBe(markdown);
+  });
+
+  it('should generate note IDs for legacy notes without nid comments', () => {
+    const legacyMarkdown = `# Habits
+
+## Meditate <!-- id:h1 -->
+- Interval: 24h
+- Total Completions: 1
+- Last completed: 2025-01-07T10:00:00Z
+| [2025-01-07T10:00:00Z] felt calm
+
+---
+
+# Tasks
+
+## Buy groceries <!-- id:t1 -->
+| [2025-01-07T09:00:00Z] Check pantry first
+
+`;
+
+    const parsed = parseMarkdown(legacyMarkdown);
+
+    // Notes should have generated IDs
+    expect(parsed.habits[0].notes[0].id).toBeTruthy();
+    expect(parsed.habits[0].notes[0].text).toBe('felt calm');
+    expect(parsed.tasks[0].notes[0].id).toBeTruthy();
+    expect(parsed.tasks[0].notes[0].text).toBe('Check pantry first');
+
+    // IDs should be unique
+    expect(parsed.habits[0].notes[0].id).not.toBe(parsed.tasks[0].notes[0].id);
   });
 
   it('should generate IDs for mixed markdown (some with, some without IDs)', () => {

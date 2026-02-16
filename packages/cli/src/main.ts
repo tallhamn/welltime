@@ -159,8 +159,10 @@ function run() {
         case 'edit-note': {
           const note = flags.note as string;
           const newNote = flags['new-note'] as string;
-          if (!note || !newNote) { fail('--note and --new-note are required'); return; }
-          state = editTaskNote(state, note, newNote, id, text);
+          const noteId = flags['note-id'] as string | undefined;
+          if (!note && !noteId) { fail('--note or --note-id is required'); return; }
+          if (!newNote) { fail('--new-note is required'); return; }
+          state = editTaskNote(state, note, newNote, id, text, noteId);
           result = { noteEdited: true };
           modified = true;
           break;
@@ -168,8 +170,9 @@ function run() {
 
         case 'delete-note': {
           const note = flags.note as string;
-          if (!note) { fail('--note is required'); return; }
-          state = deleteTaskNote(state, note, id, text);
+          const noteId = flags['note-id'] as string | undefined;
+          if (!note && !noteId) { fail('--note or --note-id is required'); return; }
+          state = deleteTaskNote(state, note, id, text, noteId);
           result = { noteDeleted: true };
           modified = true;
           break;
@@ -230,8 +233,10 @@ function run() {
         case 'edit-note': {
           const note = flags.note as string;
           const newNote = flags['new-note'] as string;
-          if (!note || !newNote) { fail('--note and --new-note are required'); return; }
-          state = editHabitNote(state, note, newNote, id, text);
+          const noteId = flags['note-id'] as string | undefined;
+          if (!note && !noteId) { fail('--note or --note-id is required'); return; }
+          if (!newNote) { fail('--new-note is required'); return; }
+          state = editHabitNote(state, note, newNote, id, text, noteId);
           result = { noteEdited: true };
           modified = true;
           break;
@@ -239,8 +244,9 @@ function run() {
 
         case 'delete-note': {
           const note = flags.note as string;
-          if (!note) { fail('--note is required'); return; }
-          state = deleteHabitNote(state, note, id, text);
+          const noteId = flags['note-id'] as string | undefined;
+          if (!note && !noteId) { fail('--note or --note-id is required'); return; }
+          state = deleteHabitNote(state, note, id, text, noteId);
           result = { noteDeleted: true };
           modified = true;
           break;

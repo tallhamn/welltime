@@ -11,6 +11,8 @@ interface HabitItemProps {
   onUpdateInterval: (id: string, intervalHours: number) => void;
   onUpdateText: (id: string, text: string) => void;
   onAddNote: (id: string, text: string) => void;
+  onEditNote: (habitId: string, noteId: string, newNoteText: string) => void;
+  onDeleteNote: (habitId: string, noteId: string) => void;
   revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
   onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
 }
@@ -25,6 +27,8 @@ export function HabitItem({
   onUpdateInterval,
   onUpdateText,
   onAddNote,
+  onEditNote,
+  onDeleteNote,
   revealedItem,
   onSetRevealed,
 }: HabitItemProps) {
@@ -32,6 +36,8 @@ export function HabitItem({
   const [editText, setEditText] = useState(habit.text);
   const [reflectionText, setReflectionText] = useState('');
   const [newNoteText, setNewNoteText] = useState('');
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState('');
   const [isEditingInterval, setIsEditingInterval] = useState(false);
   const [intervalValue, setIntervalValue] = useState(1);
   const [intervalUnit, setIntervalUnit] = useState<IntervalUnit>('days');
@@ -529,6 +535,7 @@ export function HabitItem({
               onClick={() => {
                 onSetRevealed(null);
                 setNewNoteText('');
+                setEditingNoteIndex(null);
               }}
               className="text-xs text-tokyo-text-dim hover:text-tokyo-text-muted"
             >
@@ -538,12 +545,64 @@ export function HabitItem({
           {habit.notes && habit.notes.length > 0 && (
             <div className="space-y-2 mb-3">
               {habit.notes.map((note, i) => (
-                <div key={i} className="text-sm text-tokyo-text bg-tokyo-surface px-3 py-2 rounded border-l-2 border-tokyo-yellow">
-                  <div className="whitespace-pre-wrap">{note.text}</div>
-                  {note.createdAt && (
-                    <div className="text-xs text-tokyo-text-dim mt-1">
-                      {new Date(note.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                <div
+                  key={note.id}
+                  className="group/note text-sm text-tokyo-text px-3 py-2 border-l-2 border-tokyo-yellow"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-[10px] text-tokyo-text-dim block mb-0.5">
+                      {note.createdAt ? new Date(note.createdAt).toLocaleString() : ''}
+                    </span>
+                    <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity flex-shrink-0">
+                      <button
+                        onClick={() => {
+                          setEditingNoteIndex(i);
+                          setEditingNoteText(note.text);
+                        }}
+                        className="text-[10px] text-tokyo-text-dim hover:text-tokyo-text-muted"
+                      >
+                        Edit
+                      </button>
+                      <span className="text-tokyo-text-dim">·</span>
+                      <button
+                        onClick={() => onDeleteNote(habit.id, note.id)}
+                        className="text-[10px] text-tokyo-red hover:text-tokyo-red/80"
+                      >
+                        Delete
+                      </button>
                     </div>
+                  </div>
+                  {editingNoteIndex === i ? (
+                    <div className="mt-1">
+                      <textarea
+                        value={editingNoteText}
+                        onChange={(e) => setEditingNoteText(e.target.value)}
+                        className="w-full px-3 py-2 text-sm bg-tokyo-surface-alt border border-tokyo-border rounded-lg focus:outline-none focus:ring-1 focus:ring-tokyo-blue resize-none"
+                        rows={2}
+                        autoFocus
+                      />
+                      <div className="flex justify-end gap-2 mt-1">
+                        <button
+                          onClick={() => setEditingNoteIndex(null)}
+                          className="px-3 py-1 text-xs text-tokyo-text-muted hover:text-tokyo-text"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (editingNoteText.trim()) {
+                              onEditNote(habit.id, note.id, editingNoteText.trim());
+                            }
+                            setEditingNoteIndex(null);
+                          }}
+                          className="px-3 py-1 text-xs bg-tokyo-blue text-white rounded-lg hover:bg-tokyo-blue-hover transition-colors"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="whitespace-pre-wrap">{note.text}</span>
                   )}
                 </div>
               ))}

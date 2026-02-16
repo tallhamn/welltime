@@ -13,6 +13,8 @@ interface HabitsSectionProps {
   onUpdateInterval: (id: string, intervalHours: number) => void;
   onUpdateText: (id: string, text: string) => void;
   onAddNote: (id: string, text: string) => void;
+  onEditNote: (habitId: string, noteId: string, newNoteText: string) => void;
+  onDeleteNote: (habitId: string, noteId: string) => void;
   onAddHabit: (text: string, intervalHours: number) => void;
   revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
   onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
@@ -28,6 +30,8 @@ export function HabitsSection({
   onUpdateInterval,
   onUpdateText,
   onAddNote,
+  onEditNote,
+  onDeleteNote,
   onAddHabit,
   revealedItem,
   onSetRevealed,
@@ -86,6 +90,8 @@ export function HabitsSection({
                 onUpdateInterval={onUpdateInterval}
                 onUpdateText={onUpdateText}
                 onAddNote={onAddNote}
+                onEditNote={onEditNote}
+                onDeleteNote={onDeleteNote}
                 revealedItem={revealedItem}
                 onSetRevealed={onSetRevealed}
               />

@@ -22,6 +22,8 @@ import {
   deleteHabit,
   completeHabit,
   addHabitNote,
+  editHabitNote,
+  deleteHabitNote,
   showState,
 } from './operations';
 
@@ -318,12 +320,13 @@ describe('moveTask', () => {
 });
 
 describe('addTaskNote', () => {
-  it('adds a note to a task', () => {
+  it('adds a note with a generated id to a task', () => {
     const initial = makeState({ tasks: [makeTask({ id: 't1' })] });
     const state = addTaskNote(initial, 'My note', 't1');
     expect(state.tasks[0].notes).toHaveLength(1);
     expect(state.tasks[0].notes[0].text).toBe('My note');
     expect(state.tasks[0].notes[0].createdAt).toBeTruthy();
+    expect(state.tasks[0].notes[0].id).toBeTruthy();
   });
 
   it('throws on empty note', () => {
@@ -333,12 +336,20 @@ describe('addTaskNote', () => {
 });
 
 describe('editTaskNote', () => {
-  it('edits an existing note', () => {
-    const task = makeTask({ id: 't1', notes: [{ text: 'old note', createdAt: '2025-01-01' }] });
+  it('edits an existing note by text (backwards compat)', () => {
+    const task = makeTask({ id: 't1', notes: [{ id: 'note1', text: 'old note', createdAt: '2025-01-01' }] });
     const initial = makeState({ tasks: [task] });
     const state = editTaskNote(initial, 'old note', 'new note', 't1');
     expect(state.tasks[0].notes[0].text).toBe('new note');
     expect(state.tasks[0].notes[0].createdAt).toBe('2025-01-01');
+  });
+
+  it('edits an existing note by note id', () => {
+    const task = makeTask({ id: 't1', notes: [{ id: 'note1', text: 'old note', createdAt: '2025-01-01' }] });
+    const initial = makeState({ tasks: [task] });
+    const state = editTaskNote(initial, '', 'new note', 't1', undefined, 'note1');
+    expect(state.tasks[0].notes[0].text).toBe('new note');
+    expect(state.tasks[0].notes[0].id).toBe('note1');
   });
 
   it('throws if note not found', () => {
@@ -348,10 +359,17 @@ describe('editTaskNote', () => {
 });
 
 describe('deleteTaskNote', () => {
-  it('deletes a note', () => {
-    const task = makeTask({ id: 't1', notes: [{ text: 'to delete', createdAt: '2025-01-01' }] });
+  it('deletes a note by text (backwards compat)', () => {
+    const task = makeTask({ id: 't1', notes: [{ id: 'note1', text: 'to delete', createdAt: '2025-01-01' }] });
     const initial = makeState({ tasks: [task] });
     const state = deleteTaskNote(initial, 'to delete', 't1');
+    expect(state.tasks[0].notes).toHaveLength(0);
+  });
+
+  it('deletes a note by note id', () => {
+    const task = makeTask({ id: 't1', notes: [{ id: 'note1', text: 'to delete', createdAt: '2025-01-01' }] });
+    const initial = makeState({ tasks: [task] });
+    const state = deleteTaskNote(initial, '', 't1', undefined, 'note1');
     expect(state.tasks[0].notes).toHaveLength(0);
   });
 
@@ -463,16 +481,56 @@ describe('completeHabit', () => {
 });
 
 describe('addHabitNote', () => {
-  it('adds a note to a habit', () => {
+  it('adds a note with a generated id to a habit', () => {
     const initial = makeState({ habits: [makeHabit({ id: 'h1' })] });
     const state = addHabitNote(initial, 'My note', 'h1');
     expect(state.habits[0].notes).toHaveLength(1);
     expect(state.habits[0].notes[0].text).toBe('My note');
+    expect(state.habits[0].notes[0].id).toBeTruthy();
   });
 
   it('throws on empty note', () => {
     const initial = makeState({ habits: [makeHabit({ id: 'h1' })] });
     expect(() => addHabitNote(initial, '', 'h1')).toThrow('--note is required');
+  });
+});
+
+describe('editHabitNote', () => {
+  it('edits a habit note by text (backwards compat)', () => {
+    const initial = makeState({ habits: [makeHabit({ id: 'h1', notes: [{ id: 'hn1', text: 'old', createdAt: '2025-01-01' }] })] });
+    const state = editHabitNote(initial, 'old', 'new', 'h1');
+    expect(state.habits[0].notes[0].text).toBe('new');
+    expect(state.habits[0].notes[0].id).toBe('hn1');
+  });
+
+  it('edits a habit note by note id', () => {
+    const initial = makeState({ habits: [makeHabit({ id: 'h1', notes: [{ id: 'hn1', text: 'old', createdAt: '2025-01-01' }] })] });
+    const state = editHabitNote(initial, '', 'new', 'h1', undefined, 'hn1');
+    expect(state.habits[0].notes[0].text).toBe('new');
+  });
+
+  it('throws if note not found', () => {
+    const initial = makeState({ habits: [makeHabit({ id: 'h1' })] });
+    expect(() => editHabitNote(initial, 'nope', 'new', 'h1')).toThrow('Note not found');
+  });
+});
+
+describe('deleteHabitNote', () => {
+  it('deletes a habit note by text (backwards compat)', () => {
+    const initial = makeState({ habits: [makeHabit({ id: 'h1', notes: [{ id: 'hn1', text: 'bye', createdAt: '2025-01-01' }] })] });
+    const state = deleteHabitNote(initial, 'bye', 'h1');
+    expect(state.habits[0].notes).toHaveLength(0);
+  });
+
+  it('deletes a habit note by note id', () => {
+    const initial = makeState({ habits: [makeHabit({ id: 'h1', notes: [{ id: 'hn1', text: 'bye', createdAt: '2025-01-01' }] })] });
+    const state = deleteHabitNote(initial, '', 'h1', undefined, 'hn1');
+    expect(state.habits[0].notes).toHaveLength(0);
+  });
+
+  it('throws if note not found', () => {
+    const initial = makeState({ habits: [makeHabit({ id: 'h1' })] });
+    expect(() => deleteHabitNote(initial, 'nope', 'h1')).toThrow('Note not found');
   });
 });
 

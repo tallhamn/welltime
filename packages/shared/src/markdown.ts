@@ -1,7 +1,9 @@
-import type { Habit, Task, AppState } from './types';
+import type { Habit, Task, AppState, Note } from './types';
 import { generateId } from './utils';
 
 const ID_COMMENT_RE = /\s*<!-- id:\w+ -->/g;
+const NID_COMMENT_RE = /\s*<!-- nid:\w+ -->/g;
+const ALL_COMMENT_RE = /\s*<!-- (?:id|nid):\w+ -->/g;
 
 /**
  * Extract the last embedded ID from a line and return the clean text.
@@ -17,6 +19,32 @@ function extractId(raw: string): [string, string | null] {
 }
 
 /**
+ * Extract embedded note ID (nid) from a line and return the clean text.
+ * Returns [cleanText, noteId | null].
+ */
+function extractNoteId(raw: string): [string, string | null] {
+  let lastId: string | null = null;
+  for (const m of raw.matchAll(/<!-- nid:(\w+) -->/g)) {
+    lastId = m[1];
+  }
+  const clean = raw.replace(NID_COMMENT_RE, '').trim();
+  return [clean, lastId];
+}
+
+/**
+ * Parse a note line (after `| `) into a Note object.
+ * Handles both `[timestamp] text <!-- nid:xxx -->` and legacy `[timestamp] text`.
+ */
+function parseNoteLine(content: string): Note | null {
+  const [cleanContent, noteId] = extractNoteId(content);
+  const noteMatch = cleanContent.match(/^\[(.+?)\] (.+)$/);
+  if (noteMatch) {
+    return { id: noteId || generateId(), createdAt: noteMatch[1], text: noteMatch[2] };
+  }
+  return null;
+}
+
+/**
  * Serialize habits and tasks to Markdown format
  */
 export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
@@ -29,7 +57,7 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     md += `- Last completed: ${habit.lastCompleted || 'never'}\n`;
     if (habit.notes && habit.notes.length > 0) {
       habit.notes.forEach((n) => {
-        md += `| [${n.createdAt}] ${n.text}\n`;
+        md += `| [${n.createdAt}] ${n.text} <!-- nid:${n.id} -->\n`;
       });
     }
     md += '\n';
@@ -44,7 +72,7 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     md += `${indent}- ${checkbox} ${task.text}${completedDate} <!-- id:${task.id} -->\n`;
     if (task.notes && task.notes.length > 0) {
       task.notes.forEach((n) => {
-        md += `${indent}  | [${n.createdAt}] ${n.text}\n`;
+        md += `${indent}  | [${n.createdAt}] ${n.text} <!-- nid:${n.id} -->\n`;
       });
     }
     if (task.children) {
@@ -59,7 +87,7 @@ export function serializeToMarkdown(habits: Habit[], tasks: Task[]): string {
     }
     if (task.notes && task.notes.length > 0) {
       task.notes.forEach((n) => {
-        md += `| [${n.createdAt}] ${n.text}\n`;
+        md += `| [${n.createdAt}] ${n.text} <!-- nid:${n.id} -->\n`;
       });
     }
     if (task.children && task.children.length > 0) {
@@ -128,11 +156,11 @@ export function parseMarkdown(md: string): AppState {
         } else if (line === '- Reflections:') {
           continue;
         } else if (line.startsWith('  - ')) {
-          currentHabit.notes.push({ createdAt: '', text: line.slice(4) });
+          currentHabit.notes.push({ id: generateId(), createdAt: '', text: line.slice(4) });
         } else if (line.startsWith('| ')) {
-          const noteMatch = line.slice(2).match(/^\[(.+?)\] (.+)$/);
-          if (noteMatch) {
-            currentHabit.notes.push({ createdAt: noteMatch[1], text: noteMatch[2] });
+          const note = parseNoteLine(line.slice(2));
+          if (note) {
+            currentHabit.notes.push(note);
           }
         }
       }
@@ -157,11 +185,11 @@ export function parseMarkdown(md: string): AppState {
           const dateMatch = line.match(/\((\d{4}-\d{2}-\d{2})\)/);
           if (dateMatch) currentTask.completedAt = dateMatch[1];
         } else if (line.startsWith('> ') && taskStack.length === 1) {
-          currentTask.notes.push({ createdAt: '', text: line.slice(2) });
+          currentTask.notes.push({ id: generateId(), createdAt: '', text: line.slice(2) });
         } else if (line.startsWith('| ') && taskStack.length === 1) {
-          const noteMatch = line.slice(2).match(/^\[(.+?)\] (.+)$/);
-          if (noteMatch) {
-            currentTask.notes.push({ createdAt: noteMatch[1], text: noteMatch[2] });
+          const note = parseNoteLine(line.slice(2));
+          if (note) {
+            currentTask.notes.push(note);
           }
         } else if (line.match(/^(\s*)- \[(x| )\] /)) {
           // Extract and strip all ID comments before matching
@@ -196,14 +224,14 @@ export function parseMarkdown(md: string): AppState {
           // Reflection for a subtask
           const reflection = line.trim().slice(2);
           if (taskStack.length > 0) {
-            taskStack[taskStack.length - 1].notes.push({ createdAt: '', text: reflection });
+            taskStack[taskStack.length - 1].notes.push({ id: generateId(), createdAt: '', text: reflection });
           }
         } else if (line.match(/^\s*\| /)) {
           // Note for a subtask
           const noteContent = line.trim().slice(2);
-          const noteMatch = noteContent.match(/^\[(.+?)\] (.+)$/);
-          if (noteMatch && taskStack.length > 0) {
-            taskStack[taskStack.length - 1].notes.push({ createdAt: noteMatch[1], text: noteMatch[2] });
+          const note = parseNoteLine(noteContent);
+          if (note && taskStack.length > 0) {
+            taskStack[taskStack.length - 1].notes.push(note);
           }
         }
       }

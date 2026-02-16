@@ -200,8 +200,8 @@ describe('TaskItem Component', () => {
     const taskWithNotes: Task = {
       ...mockTask,
       notes: [
-        { text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
-        { text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
+        { id: 'tn1', text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
+        { id: 'tn2', text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
       ],
     };
 
@@ -298,8 +298,8 @@ describe('TaskItem Component', () => {
     const taskWithNotes: Task = {
       ...mockTask,
       notes: [
-        { text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
-        { text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
+        { id: 'tn1', text: 'First note', createdAt: '2026-02-12T10:00:00Z' },
+        { id: 'tn2', text: 'Second note', createdAt: '2026-02-12T11:00:00Z' },
       ],
     };
 
@@ -325,7 +325,7 @@ describe('TaskItem Component', () => {
     const taskWithNotes: Task = {
       ...mockTask,
       notes: [
-        { text: 'Research finding here', createdAt: '2026-02-12T10:00:00Z' },
+        { id: 'tn3', text: 'Research finding here', createdAt: '2026-02-12T10:00:00Z' },
       ],
     };
 
@@ -379,7 +379,7 @@ describe('TaskItem Component', () => {
     const taskWithNotes: Task = {
       ...mockTask,
       notes: [
-        { text: 'Note to delete', createdAt: '2026-02-12T10:00:00Z' },
+        { id: 'tn4', text: 'Note to delete', createdAt: '2026-02-12T10:00:00Z' },
       ],
     };
 
@@ -400,7 +400,7 @@ describe('TaskItem Component', () => {
 
     fireEvent.click(screen.getByText('Delete'));
 
-    expect(onDeleteNote).toHaveBeenCalledWith('t1', 'Note to delete');
+    expect(onDeleteNote).toHaveBeenCalledWith('t1', 'tn4');
   });
 
   it('should allow editing a note inline', () => {
@@ -408,7 +408,7 @@ describe('TaskItem Component', () => {
     const taskWithNotes: Task = {
       ...mockTask,
       notes: [
-        { text: 'Original note', createdAt: '2026-02-12T10:00:00Z' },
+        { id: 'tn5', text: 'Original note', createdAt: '2026-02-12T10:00:00Z' },
       ],
     };
 
@@ -437,6 +437,6 @@ describe('TaskItem Component', () => {
     // Save
     fireEvent.click(screen.getAllByText('Save')[0]);
 
-    expect(onEditNote).toHaveBeenCalledWith('t1', 'Original note', 'Updated note');
+    expect(onEditNote).toHaveBeenCalledWith('t1', 'tn5', 'Updated note');
   });
 });

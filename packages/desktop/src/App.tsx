@@ -230,38 +230,48 @@ function App() {
   const addTaskNote = (id: string, text: string) => {
     setTasks((prev) => findAndUpdate(prev, id, (t) => ({
       ...t,
-      notes: [...(t.notes || []), { text, createdAt: new Date().toISOString() }],
+      notes: [...(t.notes || []), { id: generateId(), text, createdAt: new Date().toISOString() }],
     })));
   };
 
   const addHabitNote = (id: string, text: string) => {
     setHabits((prev) =>
-      prev.map((h) => (h.id === id ? { ...h, notes: [...(h.notes || []), { text, createdAt: new Date().toISOString() }] } : h))
+      prev.map((h) => (h.id === id ? { ...h, notes: [...(h.notes || []), { id: generateId(), text, createdAt: new Date().toISOString() }] } : h))
     );
   };
 
-  const normalizeNoteText = (text: string) => text.replace(/^["']|["']$/g, '').trim();
-
-  const noteMatches = (noteText: string, searchText: string): boolean => {
-    const a = normalizeNoteText(noteText);
-    const b = normalizeNoteText(searchText);
-    return a === b || a.toLowerCase() === b.toLowerCase();
-  };
-
-  const editTaskNote = (id: string, noteText: string, newNoteText: string) => {
+  const editTaskNote = (id: string, noteId: string, newNoteText: string) => {
     setTasks((prev) => findAndUpdate(prev, id, (t) => ({
       ...t,
       notes: (t.notes || []).map((n) =>
-        noteMatches(n.text, noteText) ? { ...n, text: newNoteText } : n
+        n.id === noteId ? { ...n, text: newNoteText } : n
       ),
     })));
   };
 
-  const deleteTaskNote = (id: string, noteText: string) => {
+  const deleteTaskNote = (id: string, noteId: string) => {
     setTasks((prev) => findAndUpdate(prev, id, (t) => ({
       ...t,
-      notes: (t.notes || []).filter((n) => !noteMatches(n.text, noteText)),
+      notes: (t.notes || []).filter((n) => n.id !== noteId),
     })));
+  };
+
+  const editHabitNote = (habitId: string, noteId: string, newNoteText: string) => {
+    setHabits((prev) =>
+      prev.map((h) => h.id === habitId ? {
+        ...h,
+        notes: (h.notes || []).map((n) => n.id === noteId ? { ...n, text: newNoteText } : n),
+      } : h)
+    );
+  };
+
+  const deleteHabitNote = (habitId: string, noteId: string) => {
+    setHabits((prev) =>
+      prev.map((h) => h.id === habitId ? {
+        ...h,
+        notes: (h.notes || []).filter((n) => n.id !== noteId),
+      } : h)
+    );
   };
 
   const addTask = (text: string) => {
@@ -429,8 +439,17 @@ function App() {
         break;
 
       case 'edit_note':
-        if (action.taskId && action.noteText && action.newNoteText) {
-          editTaskNote(action.taskId, action.noteText, action.newNoteText);
+        if (action.taskId && action.newNoteText && (action.noteId || action.noteText)) {
+          if (action.noteId) {
+            editTaskNote(action.taskId, action.noteId, action.newNoteText);
+          } else {
+            // Legacy text-match fallback: find note by text, then use its id
+            const matchTask = tasks.flatMap(function findAll(t: Task): Task[] {
+              return t.id === action.taskId ? [t] : (t.children || []).flatMap(findAll);
+            })[0];
+            const matchNote = matchTask?.notes?.find(n => n.text === action.noteText);
+            if (matchNote) editTaskNote(action.taskId, matchNote.id, action.newNoteText);
+          }
           setUndoMessage(`Updated note on "${action.taskText || 'task'}"`);
           setShowUndo(true);
           setTimeout(() => setShowUndo(false), 10000);
@@ -438,8 +457,16 @@ function App() {
         break;
 
       case 'delete_note':
-        if (action.taskId && action.noteText) {
-          deleteTaskNote(action.taskId, action.noteText);
+        if (action.taskId && (action.noteId || action.noteText)) {
+          if (action.noteId) {
+            deleteTaskNote(action.taskId, action.noteId);
+          } else {
+            const matchTask = tasks.flatMap(function findAll(t: Task): Task[] {
+              return t.id === action.taskId ? [t] : (t.children || []).flatMap(findAll);
+            })[0];
+            const matchNote = matchTask?.notes?.find(n => n.text === action.noteText);
+            if (matchNote) deleteTaskNote(action.taskId, matchNote.id);
+          }
           setUndoMessage(`Deleted note from "${action.taskText || 'task'}"`);
           setShowUndo(true);
           setTimeout(() => setShowUndo(false), 10000);
@@ -572,6 +599,8 @@ function App() {
           onUpdateInterval={updateHabitInterval}
           onUpdateText={updateHabitText}
           onAddNote={addHabitNote}
+          onEditNote={editHabitNote}
+          onDeleteNote={deleteHabitNote}
           onAddHabit={addHabit}
           revealedItem={revealedItem}
           onSetRevealed={setRevealedItem}

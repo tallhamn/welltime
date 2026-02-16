@@ -8,8 +8,8 @@ interface TaskItemProps {
   showCompleted: boolean;
   onToggle: (id: string) => void;
   onAddNote: (id: string, text: string) => void;
-  onEditNote: (id: string, noteText: string, newNoteText: string) => void;
-  onDeleteNote: (id: string, noteText: string) => void;
+  onEditNote: (id: string, noteId: string, newNoteText: string) => void;
+  onDeleteNote: (id: string, noteId: string) => void;
   onAddSubtask: (parentId: string, text: string) => void;
   revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
   onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
@@ -343,7 +343,7 @@ export function TaskItem({
               <div className="space-y-2 mb-3">
                 {task.notes.map((note, i) => (
                   <div
-                    key={i}
+                    key={note.id}
                     className="group/note text-sm text-tokyo-text px-3 py-2 border-l-2 border-tokyo-yellow"
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -362,7 +362,7 @@ export function TaskItem({
                         </button>
                         <span className="text-tokyo-text-dim">·</span>
                         <button
-                          onClick={() => onDeleteNote(task.id, note.text)}
+                          onClick={() => onDeleteNote(task.id, note.id)}
                           className="text-[10px] text-tokyo-red hover:text-tokyo-red/80"
                         >
                           Delete
@@ -388,7 +388,7 @@ export function TaskItem({
                           <button
                             onClick={() => {
                               if (editingNoteText.trim()) {
-                                onEditNote(task.id, note.text, editingNoteText.trim());
+                                onEditNote(task.id, note.id, editingNoteText.trim());
                               }
                               setEditingNoteIndex(null);
                             }}
