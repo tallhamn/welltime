@@ -18,6 +18,8 @@ interface HabitsSectionProps {
   onEditNote: (habitId: string, noteId: string, newNoteText: string) => void;
   onDeleteNote: (habitId: string, noteId: string) => void;
   onAddHabit: (text: string, intervalHours: number) => void;
+  onAdjustPreferredHour?: (habitId: string, newHour: number) => void;
+  onAdjustCompletionTime?: (habitId: string, timestamp: string, newHour: number) => void;
   revealedItem: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null;
   onSetRevealed: (item: { type: 'habit' | 'task'; id: string; mode: 'reflection' | 'edit' | 'add-subtask' | 'notes' } | null) => void;
 }
@@ -35,6 +37,8 @@ export function HabitsSection({
   onEditNote,
   onDeleteNote,
   onAddHabit,
+  onAdjustPreferredHour,
+  onAdjustCompletionTime,
   revealedItem,
   onSetRevealed,
 }: HabitsSectionProps) {
@@ -70,7 +74,7 @@ export function HabitsSection({
           </button>
         </div>
       </div>
-      <HabitTimeline habits={habits} currentHour={currentHour} highlightHabitId={hoveredHabitId} onHoverHabit={setHoveredHabitId} />
+      <HabitTimeline habits={habits} currentHour={currentHour} highlightHabitId={hoveredHabitId} onHoverHabit={setHoveredHabitId} onAdjustPreferredHour={onAdjustPreferredHour} onAdjustCompletionTime={onAdjustCompletionTime} />
       {isAdding && (
         <AddHabitRow
           onAdd={handleAddHabit}

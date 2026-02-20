@@ -173,8 +173,8 @@ export function parseMarkdown(md: string): AppState {
           const value = line.slice(18);
           currentHabit.lastCompleted = value === 'never' ? null : value;
         } else if (line.startsWith('- Preferred hour: ')) {
-          const val = parseInt(line.slice(18));
-          if (!isNaN(val) && val >= 0 && val <= 23) {
+          const val = parseFloat(line.slice(18));
+          if (!isNaN(val) && val >= 0 && val < 24) {
             currentHabit.preferredHour = val;
           }
         } else if (line.startsWith('- Icon: ')) {

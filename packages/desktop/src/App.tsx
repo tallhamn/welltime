@@ -256,6 +256,32 @@ function App() {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, text, preferredHour: undefined } : h)));
   };
 
+  const adjustPreferredHour = (habitId: string, newHour: number) => {
+    setHabits((prev) => prev.map((h) => h.id === habitId ? { ...h, preferredHour: newHour } : h));
+  };
+
+  const adjustCompletionTime = (habitId: string, originalTimestamp: string, newHour: number) => {
+    const origDate = new Date(originalTimestamp);
+    const newDate = new Date(origDate);
+    newDate.setHours(Math.floor(newHour));
+    newDate.setMinutes(Math.round((newHour - Math.floor(newHour)) * 60));
+    newDate.setSeconds(0);
+    newDate.setMilliseconds(0);
+    const newTimestamp = newDate.toISOString();
+
+    setHabits((prev) => prev.map((h) => {
+      if (h.id !== habitId) return h;
+      const newHistory = (h.completionHistory || []).map((ts) =>
+        ts === originalTimestamp ? newTimestamp : ts
+      );
+      return {
+        ...h,
+        completionHistory: newHistory,
+        lastCompleted: h.lastCompleted === originalTimestamp ? newTimestamp : h.lastCompleted,
+      };
+    }));
+  };
+
   const addHabit = (text: string, intervalHours: number) => {
     if (text.trim()) {
       setHabits((prev) => [
@@ -689,6 +715,8 @@ function App() {
           onEditNote={editHabitNote}
           onDeleteNote={deleteHabitNote}
           onAddHabit={addHabit}
+          onAdjustPreferredHour={adjustPreferredHour}
+          onAdjustCompletionTime={adjustCompletionTime}
           revealedItem={revealedItem}
           onSetRevealed={setRevealedItem}
         />
